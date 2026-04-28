@@ -7,326 +7,125 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
     --bg: #f7f6f3;
     --surface: #ffffff;
-    --surface2: #f0efec;
     --border: #e2e0da;
     --border2: #ccc9c0;
     --text: #1a1a18;
     --muted: #6b6960;
     --accent: #1a1a18;
     --radius: 10px;
-    --shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+    --weekend-bg: #eef4ff;
+    --weekend-border: #c8d8f5;
+    --top-bg: #fffbea;
+    --top-border: #f0d060;
   }
+  *, *::before, *::after { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    font-size: 14px;
-    line-height: 1.5;
-  }
-
-  /* ── Login ── */
-  #login-screen {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 2rem;
-  }
-  .login-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 2.5rem 2rem;
-    width: 100%;
-    max-width: 360px;
-    text-align: center;
-  }
-  .login-card h1 {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-  .login-card p {
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 1.5rem;
-  }
-  .login-card input[type="password"] {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    font-size: 14px;
-    margin-bottom: 10px;
-    outline: none;
-    background: var(--bg);
-  }
+  #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem 2rem; width: 100%; max-width: 360px; text-align: center; }
+  .login-card h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .login-card p { font-size: 13px; color: var(--muted); margin-bottom: 1.5rem; }
+  .login-card input[type="password"] { width: 100%; padding: 10px 14px; border: 1px solid var(--border2); border-radius: 8px; font-size: 14px; margin-bottom: 10px; outline: none; background: var(--bg); }
   .login-card input:focus { border-color: var(--accent); }
-  .login-card button {
-    width: 100%;
-    padding: 10px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-  }
+  .login-card button { width: 100%; padding: 10px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
   .login-card button:hover { opacity: 0.88; }
-  #login-error {
-    font-size: 12px;
-    color: #c0392b;
-    margin-top: 8px;
-    min-height: 16px;
-  }
+  #login-error { font-size: 12px; color: #c0392b; margin-top: 8px; min-height: 16px; }
 
-  /* ── App ── */
   #app { display: none; }
-
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; gap: 12px; flex-wrap: wrap; }
   header h1 { font-size: 15px; font-weight: 600; }
-  header span { font-size: 12px; color: var(--muted); }
-  header button.logout {
-    font-size: 12px;
-    color: var(--muted);
-    background: none;
-    border: 1px solid var(--border2);
-    border-radius: 6px;
-    padding: 4px 10px;
-    cursor: pointer;
-  }
+  .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  main { max-width: 980px; margin: 0 auto; padding: 20px 16px 60px; }
 
-  main { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
+  .btn-primary { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-ghost { font-size: 12px; color: var(--muted); background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 5px 12px; cursor: pointer; white-space: nowrap; }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { font-size: 12px; color: var(--muted); background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+  .btn-danger:hover { border-color: #c0392b; color: #c0392b; }
+  #import-input { display: none; }
 
-  /* ── Cards ── */
-  .card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-  .metric-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 10px 14px;
-  }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; }
   .metric-card .label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
   .metric-card .value { font-size: 18px; font-weight: 600; }
-  .metric-card.total .value { color: #1a1a18; }
 
-  /* ── Paste area ── */
-  .paste-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 20px;
-  }
-  .paste-section label {
-    font-size: 12px;
-    color: var(--muted);
-    display: block;
-    margin-bottom: 6px;
-  }
-  .paste-section textarea {
-    width: 100%;
-    height: 80px;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    padding: 8px;
-    resize: vertical;
-    background: var(--bg);
-    outline: none;
-  }
+  .paste-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 18px; }
+  .paste-section label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+  .paste-section textarea { width: 100%; height: 76px; font-family: 'Courier New', monospace; font-size: 11px; border: 1px solid var(--border2); border-radius: 8px; padding: 8px; resize: vertical; background: var(--bg); outline: none; }
   .paste-section textarea:focus { border-color: var(--accent); }
-  .paste-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 8px;
-  }
-  .btn-primary {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 18px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .btn-primary:hover { opacity: 0.85; }
-  #status {
-    font-size: 12px;
-    color: var(--muted);
-    flex: 1;
-  }
+  .paste-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+  #status { font-size: 12px; color: var(--muted); flex: 1; min-width: 160px; }
   #status.ok { color: #2e7d32; }
   #status.err { color: #c0392b; }
 
-  /* ── Chart section ── */
-  .chart-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 20px;
-  }
-  .section-title {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 12px;
-  }
-  .toggles {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 14px;
-  }
-  .tog-btn {
-    font-size: 11px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    border: 1px solid var(--border2);
-    background: transparent;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--muted);
-    transition: all 0.15s;
-  }
-  .tog-btn .dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    background: var(--border2);
-  }
+  .chart-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 18px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+  .section-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .toggles { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .tog-btn { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border2); background: transparent; cursor: pointer; display: flex; align-items: center; gap: 5px; color: var(--muted); }
+  .tog-btn .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
   .chart-wrap { position: relative; width: 100%; height: 280px; }
 
-  /* ── Table ── */
-  .table-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    margin-bottom: 16px;
-  }
-  .table-header {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+  .month-select { font-size: 12px; border: 1px solid var(--border2); border-radius: 6px; padding: 5px 10px; background: var(--bg); color: var(--text); cursor: pointer; outline: none; }
+  .month-select:focus { border-color: var(--accent); }
+
+  .table-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; }
+  .table-header { padding: 10px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .legend-row { display: flex; gap: 14px; font-size: 11px; color: var(--muted); align-items: center; flex-wrap: wrap; }
+  .legend-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
   .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; min-width: 520px; }
-  th {
-    text-align: right;
-    padding: 8px 12px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--muted);
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-    background: var(--bg);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
+  table { width: 100%; border-collapse: collapse; min-width: 560px; }
+  th { text-align: right; padding: 8px 12px; font-size: 11px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; background: var(--bg); text-transform: uppercase; letter-spacing: 0.04em; }
   th:first-child { text-align: left; }
-  td {
-    text-align: right;
-    padding: 8px 12px;
-    font-size: 13px;
-    border-bottom: 1px solid var(--border);
-  }
-  td:first-child { text-align: left; font-size: 12px; color: var(--muted); }
+  td { text-align: right; padding: 7px 12px; font-size: 13px; border-bottom: 1px solid var(--border); }
+  td:first-child { text-align: left; font-size: 12px; }
   tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--bg); }
   td.total-cell { font-weight: 600; }
 
-  .empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--muted);
-    font-size: 13px;
-  }
+  tr.weekend td { background: var(--weekend-bg); }
+  tr.weekend td:first-child { color: #3a5aa8; font-weight: 500; }
+  tr.weekend:hover td { background: #e4eefb; }
+  tr:not(.weekend):hover td { background: #f9f8f5; }
 
-  .footer-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 4px;
-  }
+  td.top-val { background: var(--top-bg); font-weight: 600; position: relative; }
+  td.top-val::after { content: '★'; font-size: 8px; color: #c8a000; position: absolute; top: 3px; right: 3px; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; }
+  .footer-row { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; flex-wrap: wrap; gap: 8px; }
   .footer-row span { font-size: 11px; color: var(--muted); }
-  .btn-ghost {
-    font-size: 11px;
-    color: var(--muted);
-    background: none;
-    border: 1px solid var(--border2);
-    border-radius: 6px;
-    padding: 4px 10px;
-    cursor: pointer;
-  }
-  .btn-ghost:hover { border-color: #c0392b; color: #c0392b; }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
     <h1>IRD Revenue Tracker</h1>
     <p>1 Hotel Melbourne</p>
-    <input type="password" id="pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkPw()">
+    <input type="password" id="pw-input" placeholder="Password">
     <button onclick="checkPw()">Sign in</button>
     <div id="login-error"></div>
   </div>
 </div>
 
-<!-- APP -->
 <div id="app">
   <header>
-    <div>
-      <h1>IRD Revenue Tracker</h1>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;">
-      <span id="day-count"></span>
-      <button class="logout" onclick="logout()">Sign out</button>
+    <h1>IRD Revenue Tracker</h1>
+    <div class="header-right">
+      <span id="day-count" style="font-size:12px;color:var(--muted);"></span>
+      <button class="btn-ghost" onclick="exportData()">Export ↓</button>
+      <button class="btn-ghost" onclick="document.getElementById('import-input').click()">Import ↑</button>
+      <input type="file" id="import-input" accept=".json" onchange="importData(event)">
+      <button class="btn-ghost" onclick="logout()">Sign out</button>
     </div>
   </header>
 
   <main>
-    <!-- Summary cards -->
     <div id="cards" class="card-grid"></div>
 
-    <!-- Paste & extract -->
     <div class="paste-section">
       <label>Paste full DOR sheet here (Ctrl+A → Ctrl+C from Excel, then paste)</label>
       <textarea id="paste-area" placeholder="Paste DOR data..."></textarea>
@@ -336,28 +135,33 @@
       </div>
     </div>
 
-    <!-- Chart -->
     <div class="chart-section">
-      <div class="section-title">Daily revenue</div>
+      <div class="section-header">
+        <span class="section-title">Daily revenue</span>
+        <select class="month-select" id="month-filter" onchange="renderAll()">
+          <option value="all">All months</option>
+        </select>
+      </div>
       <div class="toggles" id="toggles"></div>
       <div class="chart-wrap">
         <canvas id="chart" role="img" aria-label="Daily IRD revenue line chart by category"></canvas>
       </div>
     </div>
 
-    <!-- Table -->
     <div class="table-section">
       <div class="table-header">
         <span class="section-title" style="margin:0;">History</span>
+        <div class="legend-row">
+          <span><span class="legend-swatch" style="background:var(--weekend-bg);border:1px solid var(--weekend-border);"></span>Weekend</span>
+          <span><span class="legend-swatch" style="background:var(--top-bg);border:1px solid var(--top-border);"></span>Month best ★</span>
+        </div>
       </div>
-      <div class="table-wrap">
-        <div id="tbl-container"></div>
-      </div>
+      <div class="table-wrap"><div id="tbl-container"></div></div>
     </div>
 
     <div class="footer-row">
       <span id="footer-count"></span>
-      <button class="btn-ghost" onclick="clearAll()">Clear all data</button>
+      <button class="btn-danger" onclick="clearAll()">Clear all data</button>
     </div>
   </main>
 </div>
@@ -368,23 +172,32 @@ const STORE_KEY = 'ird_days_v1';
 const SESSION_KEY = 'ird_auth';
 
 const SERIES = [
-  { k: 'breakfast_revenue',      lb: 'Breakfast',  co: '#e8960e', d: [] },
-  { k: 'lunch_revenue',          lb: 'Lunch',       co: '#1a9e6e', d: [] },
-  { k: 'dinner_revenue',         lb: 'Dinner',      co: '#2e7dd4', d: [] },
-  { k: 'total_food_revenue',     lb: 'Food total',  co: '#c94a20', d: [5, 3] },
-  { k: 'total_beverage_revenue', lb: 'Beverage',    co: '#7060cc', d: [] },
-  { k: 'surcharges',             lb: 'Surcharges',  co: '#888880', d: [2, 3] },
-  { k: 'total_ird_revenue',      lb: 'Total IRD',   co: '#1a1a18', d: [], w: 2.5 },
+  { k:'breakfast_revenue',      lb:'Breakfast',  co:'#e8960e', d:[] },
+  { k:'lunch_revenue',          lb:'Lunch',       co:'#1a9e6e', d:[] },
+  { k:'dinner_revenue',         lb:'Dinner',      co:'#2e7dd4', d:[] },
+  { k:'total_food_revenue',     lb:'Food total',  co:'#c94a20', d:[5,3] },
+  { k:'total_beverage_revenue', lb:'Beverage',    co:'#7060cc', d:[] },
+  { k:'surcharges',             lb:'Surcharges',  co:'#888880', d:[2,3] },
+  { k:'total_ird_revenue',      lb:'Total IRD',   co:'#1a1a18', d:[], w:2.5 },
+];
+
+const TABLE_COLS = [
+  { k:'breakfast_revenue',      h:'Bfst $' },
+  { k:'lunch_revenue',          h:'Lunch $' },
+  { k:'dinner_revenue',         h:'Din $' },
+  { k:'total_food_revenue',     h:'Food $' },
+  { k:'total_beverage_revenue', h:'Bev $' },
+  { k:'surcharges',             h:'Surcharges' },
+  { k:'total_ird_revenue',      h:'Total IRD' },
+  { k:'total_ird_covers',       h:'Covers', noTop:true },
 ];
 
 let active = new Set(SERIES.map(s => s.k));
 let chartObj = null;
 let days = [];
 
-// ── Auth ──
 function checkPw() {
-  const v = document.getElementById('pw-input').value;
-  if (v === PASSWORD) {
+  if (document.getElementById('pw-input').value === PASSWORD) {
     sessionStorage.setItem(SESSION_KEY, '1');
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
@@ -394,226 +207,201 @@ function checkPw() {
     document.getElementById('pw-input').value = '';
   }
 }
-
 function logout() {
   sessionStorage.removeItem(SESSION_KEY);
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
 }
 
-// ── Storage ──
 function loadDays() {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    days = raw ? JSON.parse(raw) : [];
-    days.sort((a, b) => a.date.localeCompare(b.date));
-  } catch(e) { days = []; }
+  try { const r = localStorage.getItem(STORE_KEY); days = r ? JSON.parse(r) : []; days.sort((a,b) => a.date.localeCompare(b.date)); }
+  catch(e) { days = []; }
+}
+function saveDays() { localStorage.setItem(STORE_KEY, JSON.stringify(days)); }
+
+function exportData() {
+  if (!days.length) { alert('No data to export yet.'); return; }
+  const blob = new Blob([JSON.stringify({ exported: new Date().toISOString(), days }, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ird-data-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
-function saveDays() {
-  localStorage.setItem(STORE_KEY, JSON.stringify(days));
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      const imported = parsed.days || parsed;
+      if (!Array.isArray(imported)) { alert('Invalid file.'); return; }
+      let added = 0, updated = 0;
+      imported.forEach(d => {
+        if (!d.date) return;
+        const exists = days.find(x => x.date === d.date);
+        if (exists) { Object.assign(exists, d); updated++; } else { days.push(d); added++; }
+      });
+      days.sort((a,b) => a.date.localeCompare(b.date));
+      saveDays(); updateMonthFilter(); renderAll();
+      setStatus('Imported: ' + added + ' new, ' + updated + ' updated.', 'ok');
+    } catch(err) { alert('Could not read file: ' + err.message); }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
 }
 
-// ── Parser ──
 function parseNum(s) {
   if (!s) return 0;
   s = s.trim().replace(/,/g, '');
   if (!s || s === '-' || s === '#DIV/0!') return 0;
-  if (s.startsWith('(') && s.endsWith(')')) return -(parseFloat(s.slice(1, -1)) || 0);
+  if (s.startsWith('(') && s.endsWith(')')) return -(parseFloat(s.slice(1,-1)) || 0);
   return parseFloat(s) || 0;
 }
-
-function isMeaningful(s) {
-  s = (s || '').trim();
-  return s !== '' && s !== '-' && s !== '#DIV/0!';
-}
+function isMeaningful(s) { s = (s||'').trim(); return s !== '' && s !== '-' && s !== '#DIV/0!'; }
 
 function parseDOR(text) {
-  const r = {
-    date: null,
-    breakfast_covers: 0, breakfast_avg_check: 0, breakfast_revenue: 0,
-    lunch_covers: 0, lunch_avg_check: 0, lunch_revenue: 0,
-    dinner_covers: 0, dinner_avg_check: 0, dinner_revenue: 0,
-    food_allowances: 0, total_food_revenue: 0,
-    beverage_revenue: 0, beverage_allowances: 0, total_beverage_revenue: 0,
-    surcharges: 0,
-    total_ird_covers: 0, total_ird_avg_check: 0, total_ird_revenue: 0
-  };
-
+  const r = { date:null, breakfast_covers:0, breakfast_avg_check:0, breakfast_revenue:0,
+    lunch_covers:0, lunch_avg_check:0, lunch_revenue:0, dinner_covers:0, dinner_avg_check:0,
+    dinner_revenue:0, food_allowances:0, total_food_revenue:0, beverage_revenue:0,
+    beverage_allowances:0, total_beverage_revenue:0, surcharges:0,
+    total_ird_covers:0, total_ird_avg_check:0, total_ird_revenue:0 };
   const dm = text.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-  if (dm) r.date = `${dm[3]}-${dm[1]}-${dm[2]}`;
-
-  const ALL_LABELS = new Set([
-    'In-Room Dining', 'Breakfast', 'Lunch', 'Dinner',
-    'Less: Food Allowances', 'Total Food Revenue',
-    'Beverage Revenue', 'Less: Beverage Allowances',
-    'Total Beverage Revenue', 'Total In-Room Dining'
-  ]);
-
+  if (dm) r.date = dm[3] + '-' + dm[1] + '-' + dm[2];
+  const ALL_LABELS = new Set(['In-Room Dining','Breakfast','Lunch','Dinner',
+    'Less: Food Allowances','Total Food Revenue','Beverage Revenue',
+    'Less: Beverage Allowances','Total Beverage Revenue','Total In-Room Dining']);
   let inIRD = false;
-  const lines = text.split(/\r?\n/);
-
-  for (const line of lines) {
+  for (const line of text.split(/\r?\n/)) {
     const cells = line.split('\t');
     let labelIdx = -1, label = '';
-
     for (let i = 0; i < cells.length; i++) {
       const t = cells[i].trim();
-      if (ALL_LABELS.has(t) || t.startsWith('Food and Beverage Surcharges')) {
-        labelIdx = i; label = t; break;
-      }
+      if (ALL_LABELS.has(t) || t.startsWith('Food and Beverage Surcharges')) { labelIdx = i; label = t; break; }
     }
-
     if (labelIdx < 0) continue;
     if (label === 'In-Room Dining') { inIRD = true; continue; }
     if (!inIRD) continue;
-
-    const before = cells.slice(0, labelIdx);
-    const meaningful = before
-      .map(c => ({ v: parseNum(c), s: c.trim() }))
-      .filter(x => isMeaningful(x.s));
-
-    if (label === 'Breakfast') {
-      r.breakfast_covers = meaningful[0]?.v || 0;
-      r.breakfast_avg_check = meaningful[1]?.v || 0;
-      r.breakfast_revenue = meaningful[2]?.v || 0;
-    } else if (label === 'Lunch') {
-      r.lunch_covers = meaningful[0]?.v || 0;
-      r.lunch_avg_check = meaningful[1]?.v || 0;
-      r.lunch_revenue = meaningful[2]?.v || 0;
-    } else if (label === 'Dinner') {
-      r.dinner_covers = meaningful[0]?.v || 0;
-      r.dinner_avg_check = meaningful[1]?.v || 0;
-      r.dinner_revenue = meaningful[2]?.v || 0;
-    } else if (label === 'Less: Food Allowances') {
-      r.food_allowances = meaningful[0]?.v || 0;
-    } else if (label === 'Total Food Revenue') {
-      r.total_food_revenue = meaningful[0]?.v || 0;
-    } else if (label === 'Beverage Revenue') {
-      r.beverage_revenue = meaningful[0]?.v || 0;
-    } else if (label === 'Less: Beverage Allowances') {
-      r.beverage_allowances = meaningful[0]?.v || 0;
-    } else if (label === 'Total Beverage Revenue') {
-      r.total_beverage_revenue = meaningful[0]?.v || 0;
-    } else if (label.startsWith('Food and Beverage Surcharges')) {
-      r.surcharges = meaningful[0]?.v || 0;
-    } else if (label === 'Total In-Room Dining') {
-      r.total_ird_covers = meaningful[0]?.v || 0;
-      r.total_ird_avg_check = meaningful[1]?.v || 0;
-      r.total_ird_revenue = meaningful[2]?.v || 0;
-      inIRD = false;
-    }
+    const meaningful = cells.slice(0, labelIdx).map(c => ({ v:parseNum(c), s:c.trim() })).filter(x => isMeaningful(x.s));
+    if      (label === 'Breakfast')               { r.breakfast_covers=meaningful[0]?.v||0; r.breakfast_avg_check=meaningful[1]?.v||0; r.breakfast_revenue=meaningful[2]?.v||0; }
+    else if (label === 'Lunch')                   { r.lunch_covers=meaningful[0]?.v||0; r.lunch_avg_check=meaningful[1]?.v||0; r.lunch_revenue=meaningful[2]?.v||0; }
+    else if (label === 'Dinner')                  { r.dinner_covers=meaningful[0]?.v||0; r.dinner_avg_check=meaningful[1]?.v||0; r.dinner_revenue=meaningful[2]?.v||0; }
+    else if (label === 'Less: Food Allowances')   { r.food_allowances=meaningful[0]?.v||0; }
+    else if (label === 'Total Food Revenue')      { r.total_food_revenue=meaningful[0]?.v||0; }
+    else if (label === 'Beverage Revenue')        { r.beverage_revenue=meaningful[0]?.v||0; }
+    else if (label === 'Less: Beverage Allowances') { r.beverage_allowances=meaningful[0]?.v||0; }
+    else if (label === 'Total Beverage Revenue')  { r.total_beverage_revenue=meaningful[0]?.v||0; }
+    else if (label.startsWith('Food and Beverage Surcharges')) { r.surcharges=meaningful[0]?.v||0; }
+    else if (label === 'Total In-Room Dining')    { r.total_ird_covers=meaningful[0]?.v||0; r.total_ird_avg_check=meaningful[1]?.v||0; r.total_ird_revenue=meaningful[2]?.v||0; inIRD=false; }
   }
   return r;
 }
 
-// ── Extract & add ──
 function extractAndAdd() {
   const raw = document.getElementById('paste-area').value;
-  const st = document.getElementById('status');
   if (!raw.trim()) { setStatus('Paste some data first.', 'err'); return; }
-
   try {
     const d = parseDOR(raw);
-    if (!d.date) { setStatus('Could not find a date — make sure the header rows are included in your paste.', 'err'); return; }
-    if (!d.total_ird_revenue && !d.breakfast_revenue && !d.dinner_revenue) {
-      setStatus('Parsed but all zeros — make sure the In-Room Dining section is included.', 'err'); return;
-    }
+    if (!d.date) { setStatus('Could not find a date — make sure the header rows are included.', 'err'); return; }
+    if (!d.total_ird_revenue && !d.breakfast_revenue && !d.dinner_revenue) { setStatus('Parsed but all zeros — is the In-Room Dining section included?', 'err'); return; }
     days = days.filter(x => x.date !== d.date);
     days.push(d);
-    days.sort((a, b) => a.date.localeCompare(b.date));
+    days.sort((a,b) => a.date.localeCompare(b.date));
     saveDays();
     document.getElementById('paste-area').value = '';
-    setStatus(`Added ${d.date} — Total IRD: ${fmt(d.total_ird_revenue)}`, 'ok');
-    renderAll();
-  } catch(e) {
-    setStatus('Parse error: ' + e.message, 'err');
-  }
+    setStatus('Added ' + d.date + ' — Total IRD: ' + fmt(d.total_ird_revenue), 'ok');
+    updateMonthFilter(); renderAll();
+  } catch(e) { setStatus('Parse error: ' + e.message, 'err'); }
 }
 
 function setStatus(msg, type) {
   const el = document.getElementById('status');
-  el.textContent = msg;
-  el.className = type || '';
+  el.textContent = msg; el.className = type || '';
 }
 
-// ── Render ──
 const fmt = n => '$' + Math.round(n || 0).toLocaleString();
-const fmtD = d => { if (!d) return ''; const [y, m, dy] = d.split('-'); return `${+dy}/${+m}`; };
+const fmtD = d => { if (!d) return ''; const [y,m,dy] = d.split('-'); return (+dy) + '/' + (+m); };
+
+function getMonthKey(date) { return date.slice(0,7); }
+function getMonthLabel(mk) {
+  const [y,m] = mk.split('-');
+  return new Date(+y, +m-1, 1).toLocaleString('en-AU', { month:'long', year:'numeric' });
+}
+function isWeekend(date) { const d = new Date(date + 'T00:00:00'); return d.getDay() === 0 || d.getDay() === 6; }
+
+function getFilteredDays() {
+  const sel = document.getElementById('month-filter')?.value || 'all';
+  return sel === 'all' ? days : days.filter(d => getMonthKey(d.date) === sel);
+}
+
+function updateMonthFilter() {
+  const sel = document.getElementById('month-filter');
+  const current = sel.value;
+  const months = [...new Set(days.map(d => getMonthKey(d.date)))].sort();
+  sel.innerHTML = '<option value="all">All months</option>' +
+    months.map(mk => '<option value="' + mk + '"' + (mk===current?' selected':'') + '>' + getMonthLabel(mk) + '</option>').join('');
+}
+
+function getTopValues(filtered) {
+  const tops = {};
+  TABLE_COLS.forEach(col => {
+    if (col.noTop) return;
+    const vals = filtered.map(d => d[col.k] || 0);
+    tops[col.k] = vals.length ? Math.max(...vals) : 0;
+  });
+  return tops;
+}
 
 function renderCards() {
   const el = document.getElementById('cards');
   if (!days.length) { el.innerHTML = ''; return; }
   const last = days[days.length - 1];
   const items = [
-    { lb: 'Breakfast', v: fmt(last.breakfast_revenue) },
-    { lb: 'Lunch', v: fmt(last.lunch_revenue) },
-    { lb: 'Dinner', v: fmt(last.dinner_revenue) },
-    { lb: 'Food total', v: fmt(last.total_food_revenue) },
-    { lb: 'Beverage', v: fmt(last.total_beverage_revenue) },
-    { lb: 'Surcharges', v: fmt(last.surcharges) },
-    { lb: 'Total IRD', v: fmt(last.total_ird_revenue), cls: 'total' },
+    { lb:'Breakfast', v:fmt(last.breakfast_revenue) },
+    { lb:'Lunch',     v:fmt(last.lunch_revenue) },
+    { lb:'Dinner',    v:fmt(last.dinner_revenue) },
+    { lb:'Food total',v:fmt(last.total_food_revenue) },
+    { lb:'Beverage',  v:fmt(last.total_beverage_revenue) },
+    { lb:'Surcharges',v:fmt(last.surcharges) },
+    { lb:'Total IRD', v:fmt(last.total_ird_revenue) },
   ];
-  el.innerHTML = items.map(i =>
-    `<div class="metric-card ${i.cls || ''}">
-      <div class="label">${i.lb}</div>
-      <div class="value">${i.v}</div>
-    </div>`
-  ).join('');
+  el.innerHTML = '<div style="grid-column:1/-1;font-size:11px;color:var(--muted);">Latest: ' + last.date + '</div>' +
+    items.map(i => '<div class="metric-card"><div class="label">' + i.lb + '</div><div class="value">' + i.v + '</div></div>').join('');
 }
 
 function renderToggles() {
   const el = document.getElementById('toggles');
-  if (!days.length) { el.innerHTML = ''; return; }
+  const filtered = getFilteredDays();
+  if (!filtered.length) { el.innerHTML = ''; return; }
   el.innerHTML = SERIES.map(s => {
     const on = active.has(s.k);
-    return `<button class="tog-btn" onclick="tog('${s.k}')" style="${on ? `border-color:${s.co};color:${s.co};background:${s.co}18;` : ''}">
-      <span class="dot" style="background:${on ? s.co : 'var(--border2)'};"></span>${s.lb}
-    </button>`;
+    return '<button class="tog-btn" onclick="tog(\'' + s.k + '\')" style="' + (on ? 'border-color:' + s.co + ';color:' + s.co + ';background:' + s.co + '18;' : '') + '">' +
+      '<span class="dot" style="background:' + (on ? s.co : 'var(--border2)') + ';"></span>' + s.lb + '</button>';
   }).join('');
 }
 
-function tog(k) {
-  active.has(k) ? active.delete(k) : active.add(k);
-  renderToggles();
-  renderChart();
-}
+function tog(k) { active.has(k) ? active.delete(k) : active.add(k); renderToggles(); renderChart(); }
 
 function renderChart() {
-  if (!days.length) return;
+  const filtered = getFilteredDays();
+  if (!filtered.length) return;
   const ctx = document.getElementById('chart');
   const datasets = SERIES.filter(s => active.has(s.k)).map(s => ({
-    label: s.lb,
-    data: days.map(d => Math.round(d[s.k] || 0)),
-    borderColor: s.co,
-    backgroundColor: s.co + '15',
-    borderWidth: s.w || 1.5,
-    borderDash: s.d,
-    pointRadius: days.length === 1 ? 5 : 3,
-    pointHoverRadius: 5,
-    tension: 0.3,
-    fill: false,
+    label:s.lb, data:filtered.map(d => Math.round(d[s.k] || 0)),
+    borderColor:s.co, backgroundColor:s.co+'15',
+    borderWidth:s.w||1.5, borderDash:s.d,
+    pointRadius:filtered.length===1?5:3, pointHoverRadius:5, tension:0.3, fill:false,
   }));
   if (chartObj) chartObj.destroy();
   chartObj = new Chart(ctx, {
-    type: 'line',
-    data: { labels: days.map(d => fmtD(d.date)), datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': $' + c.parsed.y.toLocaleString() } }
-      },
-      scales: {
-        x: {
-          grid: { color: 'rgba(0,0,0,0.05)' },
-          ticks: { font: { size: 11 }, color: '#888', autoSkip: false, maxRotation: 45 }
-        },
-        y: {
-          grid: { color: 'rgba(0,0,0,0.05)' },
-          ticks: { font: { size: 11 }, color: '#888', callback: v => '$' + v.toLocaleString() }
-        }
+    type:'line', data:{ labels:filtered.map(d => fmtD(d.date)), datasets },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:c => ' ' + c.dataset.label + ': $' + c.parsed.y.toLocaleString() } } },
+      scales:{
+        x:{ grid:{ color:'rgba(0,0,0,0.05)' }, ticks:{ font:{ size:11 }, color:'#888', autoSkip:false, maxRotation:45 } },
+        y:{ grid:{ color:'rgba(0,0,0,0.05)' }, ticks:{ font:{ size:11 }, color:'#888', callback:v => '$' + v.toLocaleString() } }
       }
     }
   });
@@ -621,61 +409,50 @@ function renderChart() {
 
 function renderTable() {
   const el = document.getElementById('tbl-container');
-  if (!days.length) {
-    el.innerHTML = '<div class="empty-state">No data yet — paste a DOR above to get started.</div>';
-    return;
-  }
-  const cols = ['Bfst $', 'Lunch $', 'Din $', 'Food $', 'Bev $', 'Surcharges', 'Total IRD', 'Covers'];
-  const head = '<th>Date</th>' + cols.map(c => `<th>${c}</th>`).join('');
-  const rows = [...days].reverse().map(d => {
-    const vals = [
-      fmt(d.breakfast_revenue), fmt(d.lunch_revenue), fmt(d.dinner_revenue),
-      fmt(d.total_food_revenue), fmt(d.total_beverage_revenue), fmt(d.surcharges),
-      fmt(d.total_ird_revenue), Math.round(d.total_ird_covers || 0)
-    ];
-    return `<tr>
-      <td>${d.date}</td>
-      ${vals.map((v, i) => `<td${i === 6 ? ' class="total-cell"' : ''}>${v}</td>`).join('')}
-    </tr>`;
+  const filtered = getFilteredDays();
+  if (!filtered.length) { el.innerHTML = '<div class="empty-state">No data yet — paste a DOR above to get started.</div>'; return; }
+  const tops = getTopValues(filtered);
+  const head = '<th>Date</th>' + TABLE_COLS.map(c => '<th>' + c.h + '</th>').join('');
+  const rows = [...filtered].reverse().map(d => {
+    const weekend = isWeekend(d.date);
+    const cells = TABLE_COLS.map(col => {
+      const val = d[col.k] || 0;
+      const isTop = !col.noTop && tops[col.k] > 0 && Math.round(val) === Math.round(tops[col.k]);
+      const display = col.k === 'total_ird_covers' ? Math.round(val) : fmt(val);
+      const cls = [col.k === 'total_ird_revenue' ? 'total-cell' : '', isTop ? 'top-val' : ''].filter(Boolean).join(' ');
+      return '<td' + (cls ? ' class="' + cls + '"' : '') + '>' + display + '</td>';
+    }).join('');
+    const dayLabel = d.date + (weekend ? ' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:4px;">WE</span>' : '');
+    return '<tr class="' + (weekend ? 'weekend' : '') + '"><td>' + dayLabel + '</td>' + cells + '</tr>';
   }).join('');
-  el.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+  el.innerHTML = '<table><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table>';
 }
 
 function renderAll() {
-  renderCards();
-  renderToggles();
-  renderChart();
-  renderTable();
+  renderCards(); renderToggles(); renderChart(); renderTable();
   const n = days.length;
-  const txt = n ? `${n} day${n > 1 ? 's' : ''} tracked` : '';
+  const txt = n ? n + ' day' + (n>1?'s':'') + ' tracked' : '';
   document.getElementById('day-count').textContent = txt;
   document.getElementById('footer-count').textContent = txt;
 }
 
 function clearAll() {
   if (!confirm('Clear all saved IRD data? This cannot be undone.')) return;
-  days = [];
-  localStorage.removeItem(STORE_KEY);
+  days = []; localStorage.removeItem(STORE_KEY);
   if (chartObj) { chartObj.destroy(); chartObj = null; }
-  renderAll();
-  setStatus('', '');
+  document.getElementById('month-filter').innerHTML = '<option value="all">All months</option>';
+  renderAll(); setStatus('', '');
 }
 
-function init() {
-  loadDays();
-  renderAll();
-}
+function init() { loadDays(); updateMonthFilter(); renderAll(); }
 
-// ── Boot ──
 window.addEventListener('DOMContentLoaded', () => {
   if (sessionStorage.getItem(SESSION_KEY) === '1') {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     init();
   }
-  document.getElementById('pw-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') checkPw();
-  });
+  document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkPw(); });
 });
 </script>
 </body>
