@@ -274,7 +274,7 @@ function fmtDateShort(d){
 }
 const activeSeriesMap = { dashboard: new Set(OUTLETS.map(o => o.key)) };
 OUTLETS.forEach(o => { activeSeriesMap[o.key] = new Set(OUTLET_SERIES.map(s => s.k)); });
-const occChartActive = { occ:true, mtd:true, guests:true };
+const occChartActive = { occ:true, mtd:true, guests:true, density:true };
 const GUEST_SERIES = { k:'guests', lb:'Guests', co:'#7060cc', d:[], isGuest:true };
 
 function togOccChart(key){
@@ -810,7 +810,7 @@ function parseOccLine(line){
   if(nums.length<18) return null;
   // Verified index positions: [2]=Sold [4]=Occ% [13]=Trans [14]=GrpPkup [19]=Adults [20]=Kids
   const adults=nums[19]||0, kids=nums[20]||0;
-  return {date, rms_sold:nums[2], occ:nums[4], trans_rms:nums[13], grp_pkup:nums[14], adults, kids, total_guests:adults+kids};
+  return {date, rms_sold:nums[2], occ:nums[4], trans_rms:nums[13], grp_pkup:nums[14], adults, kids, total_guests:adults+kids, density: nums[2]>0?+((adults+kids)/nums[2]).toFixed(2):0};
 }
 
 function parseOccReport(text){
@@ -871,9 +871,11 @@ function renderOccupancy(){
   const totGuests=filtered.reduce((s,d)=>s+d.total_guests,0);
   const totTrans=filtered.reduce((s,d)=>s+d.trans_rms,0);
   const totGrp=filtered.reduce((s,d)=>s+d.grp_pkup,0);
+  const totRms=filtered.reduce((s,d)=>s+d.rms_sold,0);
+  const avgDensity=totRms>0?(totGuests/totRms).toFixed(2):'-';
   cardsEl.innerHTML=[
     {lb:'Avg Occ %',v:avgOcc+'%'},{lb:'Total Guests',v:totGuests.toLocaleString()},
-    {lb:'Trans Rms',v:totTrans.toLocaleString()},{lb:'Grp Pkup Rms',v:totGrp.toLocaleString()},
+    {lb:'Avg Density',v:avgDensity+' g/rm'},{lb:'Trans Rms',v:totTrans.toLocaleString()},{lb:'Grp Pkup Rms',v:totGrp.toLocaleString()},
   ].map(i=>'<div class="metric-card"><div class="label">'+i.lb+'</div><div class="value">'+i.v+'</div></div>').join('');
   // Sort
   const ss=getSortState('occupancy');
@@ -885,9 +887,10 @@ function renderOccupancy(){
   });
   // Chart toggles
   const occSeriesCfg=[
-    {k:'occ',lb:'Occ %',co:'#2e7dd4'},
-    {k:'mtd',lb:'MTD Avg %',co:'#e8960e',dash:true},
-    {k:'guests',lb:'Guests',co:'#7060cc'},
+    {k:'occ',    lb:'Occ %',    co:'#2e7dd4'},
+    {k:'mtd',    lb:'MTD Avg %',co:'#e8960e', dash:true},
+    {k:'guests', lb:'Guests',   co:'#7060cc'},
+    {k:'density',lb:'Density',  co:'#2a7a50'},
   ];
   const togEl=document.getElementById('occ-toggles');
   togEl.innerHTML=occSeriesCfg.map(s=>{
@@ -898,30 +901,37 @@ function renderOccupancy(){
   // Chart (always date order)
   const byDate=[...filtered].sort((a,b)=>a.date.localeCompare(b.date));
   const allDatasets=[
-    {key:'occ',label:'Occ%',data:byDate.map(d=>+d.occ.toFixed(1)),borderColor:'#2e7dd4',backgroundColor:'#2e7dd415',yAxisID:'y',borderWidth:2,pointRadius:2,tension:0.3,fill:false,borderDash:[]},
-    {key:'mtd',label:'MTD Avg%',data:byDate.map(d=>+calcMTDAvg(d.date).toFixed(1)),borderColor:'#e8960e',backgroundColor:'transparent',yAxisID:'y',borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:0.3,fill:false},
-    {key:'guests',label:'Guests',data:byDate.map(d=>d.total_guests),borderColor:'#7060cc',backgroundColor:'#7060cc15',yAxisID:'y2',borderWidth:1.5,pointRadius:2,tension:0.3,fill:false,borderDash:[]},
+    {key:'occ',    label:'Occ%',    data:byDate.map(d=>+d.occ.toFixed(1)),           borderColor:'#2e7dd4',backgroundColor:'#2e7dd415',yAxisID:'y', borderWidth:2,  pointRadius:2,tension:0.3,fill:false,borderDash:[]},
+    {key:'mtd',    label:'MTD Avg%',data:byDate.map(d=>+calcMTDAvg(d.date).toFixed(1)),borderColor:'#e8960e',backgroundColor:'transparent',   yAxisID:'y', borderWidth:1.5,pointRadius:0,tension:0.3,fill:false,borderDash:[5,4]},
+    {key:'guests', label:'Guests',  data:byDate.map(d=>d.total_guests),               borderColor:'#7060cc',backgroundColor:'#7060cc15',yAxisID:'y2',borderWidth:1.5,pointRadius:2,tension:0.3,fill:false,borderDash:[]},
+    {key:'density',label:'Density', data:byDate.map(d=>d.density||0),                 borderColor:'#2a7a50',backgroundColor:'#2a7a5015',yAxisID:'y3',borderWidth:1.5,pointRadius:2,tension:0.3,fill:false,borderDash:[]},
   ];
+  const showY2=occChartActive.guests, showY3=occChartActive.density;
   const ctx=document.getElementById('occ-chart-canvas');
   if(charts.occupancy){charts.occupancy.destroy();}
   charts.occupancy=new Chart(ctx,{type:'line',
     data:{labels:byDate.map(d=>fmtD(d.date)),datasets:allDatasets.filter(s=>occChartActive[s.key])},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+(c.dataset.yAxisID==='y'?'%':'')}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{
+        if(c.dataset.yAxisID==='y') return c.dataset.label+': '+c.parsed.y+'%';
+        if(c.dataset.yAxisID==='y3') return 'Density: '+c.parsed.y+' g/rm';
+        return 'Guests: '+c.parsed.y.toLocaleString();
+      }}}},
       scales:{
-        y:{type:'linear',position:'left',min:0,max:100,ticks:{font:{size:11},color:'#888',callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.05)'}},
-        y2:{type:'linear',position:'right',ticks:{font:{size:11},color:'#888'},grid:{drawOnChartArea:false},display:occChartActive.guests},
-        x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},color:'#888',autoSkip:false,maxRotation:45}},
+        y: {type:'linear',position:'left',   min:0,max:100,ticks:{font:{size:11},color:'#888',callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.05)'}},
+        y2:{type:'linear',position:'right',  display:showY2, ticks:{font:{size:11},color:'#7060cc'},grid:{drawOnChartArea:false}},
+        y3:{type:'linear',position:'right',  display:showY3, ticks:{font:{size:11},color:'#2a7a50',callback:v=>v+''},grid:{drawOnChartArea:false},offset:showY2},
+        x: {grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},color:'#888',autoSkip:false,maxRotation:45}},
       }
     }
   });
   // Table
-  const tops={occ:Math.max(...filtered.map(d=>d.occ)),total_guests:Math.max(...filtered.map(d=>d.total_guests)),rms_sold:Math.max(...filtered.map(d=>d.rms_sold)),trans_rms:Math.max(...filtered.map(d=>d.trans_rms)),grp_pkup:Math.max(...filtered.map(d=>d.grp_pkup))};
-  const head=thSort('occupancy','date','Date',ss)+thSort('occupancy','total_guests','Guests',ss)+thSort('occupancy','occ','Occ %',ss)+'<th>MTD Avg %</th>'+thSort('occupancy','rms_sold','Rms Sold',ss)+thSort('occupancy','trans_rms','Trans Rms',ss)+thSort('occupancy','grp_pkup','Grp Pkup',ss);
+  const tops={occ:Math.max(...filtered.map(d=>d.occ)),total_guests:Math.max(...filtered.map(d=>d.total_guests)),rms_sold:Math.max(...filtered.map(d=>d.rms_sold)),trans_rms:Math.max(...filtered.map(d=>d.trans_rms)),grp_pkup:Math.max(...filtered.map(d=>d.grp_pkup)),density:Math.max(...filtered.map(d=>d.density||0))};
+  const head=thSort('occupancy','date','Date',ss)+thSort('occupancy','total_guests','Guests',ss)+thSort('occupancy','occ','Occ %',ss)+'<th>MTD Avg %</th>'+thSort('occupancy','rms_sold','Rms Sold',ss)+thSort('occupancy','trans_rms','Trans Rms',ss)+thSort('occupancy','grp_pkup','Grp Pkup',ss)+thSort('occupancy','density','Density',ss);
   const rowsHtml=sorted.map(d=>{
     const we=isWeekend(d.date);
     const mtd=calcMTDAvg(d.date).toFixed(1);
-    const tc=(key,val,display)=>'<td'+(tops[key]>0&&val===tops[key]?' class="top"':'')+'>'+display+'</td>';
+    const tc=(k,val,display)=>'<td'+(tops[k]>0&&val===tops[k]?' class="top"':'')+'>'+display+'</td>';
     const label=fmtDateShort(d.date)+(we?' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:3px">WE</span>':'')+noteDot(d.date);
     return '<tr class="'+noteRowClass(d.date,we)+'"><td class="date-cell" onclick="openNote(\''+d.date+'\')">'+label+'</td>'
       +tc('total_guests',d.total_guests,d.total_guests.toLocaleString())
@@ -930,6 +940,7 @@ function renderOccupancy(){
       +tc('rms_sold',d.rms_sold,d.rms_sold)
       +tc('trans_rms',d.trans_rms,d.trans_rms)
       +tc('grp_pkup',d.grp_pkup,d.grp_pkup)
+      +tc('density',d.density||0,(d.density||0).toFixed(2))
       +'</tr>';
   }).join('');
   tblEl.innerHTML='<table style="min-width:540px"><thead><tr>'+head+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>';
