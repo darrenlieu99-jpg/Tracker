@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>F&B Revenue Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -74,11 +75,11 @@ main{max-width:1040px;margin:0 auto;padding:20px 16px 60px}
 .chart-wrap{position:relative;width:100%;height:270px}
 
 /* Table */
-.table-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
-.table-header{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.table-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px}
+.table-header{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-radius:var(--radius) var(--radius) 0 0}
 .legend-row{display:flex;gap:12px;font-size:11px;color:var(--muted);align-items:center}
 .leg-sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:3px;vertical-align:middle}
-.table-wrap{overflow-x:auto}
+.table-wrap{overflow-x:auto;border-radius:0 0 var(--radius) var(--radius)}
 table{width:100%;border-collapse:collapse;min-width:500px}
 th{text-align:right;padding:7px 10px;font-size:11px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;background:var(--bg);text-transform:uppercase;letter-spacing:.04em}
 th:first-child{text-align:left}
@@ -126,10 +127,11 @@ td.date-cell{white-space:nowrap;font-size:12px;color:var(--muted)}
 
 <div id="app">
   <header>
-    <h1>F&B Revenue Tracker — 1 Hotel Melbourne</h1>
+    <h1>F&B Revenue Tracker </h1>
     <div class="header-right">
       <span id="day-count" style="font-size:12px;color:var(--muted)"></span>
-      <button class="btn-ghost" onclick="exportData()">Export ↓</button>
+      <button class="btn-ghost" onclick="exportData()">Export JSON ↓</button>
+      <button class="btn-ghost" onclick="exportExcel()">Export Excel ↓</button>
       <button class="btn-ghost" onclick="document.getElementById('import-input').click()">Import ↑</button>
       <input type="file" id="import-input" accept=".json" onchange="importData(event)">
       <button class="btn-ghost" onclick="logout()">Sign out</button>
@@ -634,7 +636,45 @@ function renderOutletTable(key,filtered){
   el.innerHTML='<table style="min-width:480px"><thead><tr>'+head+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>';
 }
 
-function clearAll(){
+function exportExcel(){
+  if (!days.length){alert('No data to export yet.');return;}
+  if (typeof XLSX==='undefined'){alert('Excel library not loaded yet — try again in a moment.');return;}
+  const wb=XLSX.utils.book_new();
+  const sorted=[...days].sort((a,b)=>a.date.localeCompare(b.date));
+  const fmtN=n=>Math.round(n||0);
+
+  // ── Dashboard sheet ──
+  const dashHeader=['Date',...OUTLETS.map(o=>o.label),'Total F&B'];
+  const dashRows=sorted.map(d=>[
+    d.date,
+    ...OUTLETS.map(o=>fmtN(d.outlets[o.key].total_revenue)),
+    fmtN(d.total_fb)
+  ]);
+  const dashTotals=['TOTAL',...OUTLETS.map(o=>sorted.reduce((s,d)=>s+fmtN(d.outlets[o.key].total_revenue),0)),sorted.reduce((s,d)=>s+fmtN(d.total_fb),0)];
+  const dashWs=XLSX.utils.aoa_to_sheet([dashHeader,...dashRows,[],dashTotals]);
+  dashWs['!cols']=[{wch:14},...OUTLETS.map(()=>({wch:16})),{wch:14}];
+  XLSX.utils.book_append_sheet(wb,dashWs,'Dashboard');
+
+  // ── One sheet per outlet ──
+  OUTLETS.forEach(o=>{
+    const cols=['Date','Breakfast','Lunch','Dinner','Other','Food Total','Beverage','Surcharges','Total','Covers'];
+    const rows=sorted.map(d=>{
+      const ot=d.outlets[o.key];
+      return [d.date,fmtN(ot.breakfast_revenue),fmtN(ot.lunch_revenue),fmtN(ot.dinner_revenue),fmtN(ot.other_revenue),fmtN(ot.total_food_revenue),fmtN(ot.beverage_revenue),fmtN(ot.surcharges),fmtN(ot.total_revenue),fmtN(ot.total_covers)];
+    });
+    const totRow=['TOTAL',...['breakfast_revenue','lunch_revenue','dinner_revenue','other_revenue','total_food_revenue','beverage_revenue','surcharges','total_revenue'].map(k=>sorted.reduce((s,d)=>s+fmtN(d.outlets[o.key][k]),0)),''];
+    const ws=XLSX.utils.aoa_to_sheet([cols,...rows,[],totRow]);
+    ws['!cols']=[{wch:14},{wch:12},{wch:12},{wch:12},{wch:12},{wch:13},{wch:12},{wch:13},{wch:12},{wch:9}];
+    // Safe sheet name (max 31 chars, no special chars)
+    const sheetName=o.label.replace(/[:\\\/\?\*\[\]]/g,'').slice(0,31);
+    XLSX.utils.book_append_sheet(wb,ws,sheetName);
+  });
+
+  const filename='fb-tracker-'+new Date().toISOString().slice(0,10)+'.xlsx';
+  XLSX.writeFile(wb,filename);
+}
+
+
   if (!confirm('Clear all data? This cannot be undone.')) return;
   days=[]; localStorage.removeItem(STORE_KEY);
   Object.values(charts).forEach(c=>c.destroy()); Object.keys(charts).forEach(k=>delete charts[k]);
