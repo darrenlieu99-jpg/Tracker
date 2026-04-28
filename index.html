@@ -119,15 +119,16 @@ td.date-cell{white-space:nowrap;font-size:12px;color:var(--muted)}
 <div id="login-screen">
   <div class="login-card">
     <h1>F&B Revenue Tracker</h1>
+    <p>1 Hotel Melbourne</p>
     <input type="password" id="pw-input" placeholder="Password">
-    <button onclick="checkPw)">Sign in</button>
+    <button onclick="checkPw()">Sign in</button>
     <div id="login-error"></div>
   </div>
 </div>
 
 <div id="app">
   <header>
-    <h1>F&B Revenue Tracker </h1>
+    <h1>F&B Revenue Tracker</h1>
     <div class="header-right">
       <span id="day-count" style="font-size:12px;color:var(--muted)"></span>
       <button class="btn-ghost" onclick="exportData()">Export JSON ↓</button>
@@ -246,7 +247,7 @@ const activeSeriesMap = { dashboard: new Set(OUTLETS.map(o => o.key)) };
 OUTLETS.forEach(o => { activeSeriesMap[o.key] = new Set(OUTLET_SERIES.map(s => s.k)); });
 
 // ── Auth ──
-function checkPw) {
+function checkPw() {
   if (document.getElementById('pw-input').value === PASSWORD) {
     sessionStorage.setItem(SESSION_KEY,'1');
     document.getElementById('login-screen').style.display='none';
@@ -674,7 +675,7 @@ function exportExcel(){
   XLSX.writeFile(wb,filename);
 }
 
-
+function clearAll(){
   if (!confirm('Clear all data? This cannot be undone.')) return;
   days=[]; localStorage.removeItem(STORE_KEY);
   Object.values(charts).forEach(c=>c.destroy()); Object.keys(charts).forEach(k=>delete charts[k]);
@@ -692,7 +693,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('app').style.display='block';
     init();
   }
-  document.getElementById('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter')checkPw);});
+  document.getElementById('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter')checkPw();});
 });
 </script>
 </body>
