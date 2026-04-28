@@ -3,107 +3,114 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IRD Revenue Tracker — 1 Hotel Melbourne</title>
+<title>F&B Revenue Tracker — 1 Hotel Melbourne</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #f7f6f3;
-    --surface: #ffffff;
-    --border: #e2e0da;
-    --border2: #ccc9c0;
-    --text: #1a1a18;
-    --muted: #6b6960;
-    --accent: #1a1a18;
-    --radius: 10px;
-    --weekend-bg: #eef4ff;
-    --weekend-border: #c8d8f5;
-    --top-bg: #fffbea;
-    --top-border: #f0d060;
-  }
-  *, *::before, *::after { box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f6f3;--surface:#fff;--border:#e2e0da;--border2:#ccc9c0;
+  --text:#1a1a18;--muted:#6b6960;--accent:#1a1a18;--radius:10px;
+  --weekend-bg:#eef4ff;--top-bg:#fffbea;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
 
-  #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
-  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem 2rem; width: 100%; max-width: 360px; text-align: center; }
-  .login-card h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
-  .login-card p { font-size: 13px; color: var(--muted); margin-bottom: 1.5rem; }
-  .login-card input[type="password"] { width: 100%; padding: 10px 14px; border: 1px solid var(--border2); border-radius: 8px; font-size: 14px; margin-bottom: 10px; outline: none; background: var(--bg); }
-  .login-card input:focus { border-color: var(--accent); }
-  .login-card button { width: 100%; padding: 10px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
-  .login-card button:hover { opacity: 0.88; }
-  #login-error { font-size: 12px; color: #c0392b; margin-top: 8px; min-height: 16px; }
+/* Login */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2.5rem 2rem;width:100%;max-width:360px;text-align:center}
+.login-card h1{font-size:18px;font-weight:600;margin-bottom:4px}
+.login-card p{font-size:13px;color:var(--muted);margin-bottom:1.5rem}
+.login-card input{width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:8px;font-size:14px;margin-bottom:10px;outline:none;background:var(--bg)}
+.login-card input:focus{border-color:var(--accent)}
+.login-card button{width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer}
+.login-card button:hover{opacity:.88}
+#login-error{font-size:12px;color:#c0392b;margin-top:8px;min-height:16px}
 
-  #app { display: none; }
-  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; gap: 12px; flex-wrap: wrap; }
-  header h1 { font-size: 15px; font-weight: 600; }
-  .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  main { max-width: 980px; margin: 0 auto; padding: 20px 16px 60px; }
+/* App shell */
+#app{display:none}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;gap:10px;flex-wrap:wrap}
+header h1{font-size:15px;font-weight:600}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 
-  .btn-primary { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
-  .btn-primary:hover { opacity: 0.85; }
-  .btn-ghost { font-size: 12px; color: var(--muted); background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 5px 12px; cursor: pointer; white-space: nowrap; }
-  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-danger { font-size: 12px; color: var(--muted); background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 5px 12px; cursor: pointer; }
-  .btn-danger:hover { border-color: #c0392b; color: #c0392b; }
-  #import-input { display: none; }
+/* Tab bar */
+.tab-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:0;overflow-x:auto;position:sticky;top:49px;z-index:19;scrollbar-width:none}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab-btn{font-size:12px;font-weight:500;padding:10px 14px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--muted);white-space:nowrap;transition:color .15s}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--text);border-bottom-color:var(--accent)}
 
-  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 18px; }
-  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; }
-  .metric-card .label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-  .metric-card .value { font-size: 18px; font-weight: 600; }
+/* Toolbar */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.month-select{font-size:12px;border:1px solid var(--border2);border-radius:6px;padding:5px 10px;background:var(--bg);color:var(--text);cursor:pointer;outline:none}
+.paste-btn-area{margin-left:auto;display:flex;align-items:center;gap:8px}
 
-  .paste-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 18px; }
-  .paste-section label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
-  .paste-section textarea { width: 100%; height: 76px; font-family: 'Courier New', monospace; font-size: 11px; border: 1px solid var(--border2); border-radius: 8px; padding: 8px; resize: vertical; background: var(--bg); outline: none; }
-  .paste-section textarea:focus { border-color: var(--accent); }
-  .paste-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
-  #status { font-size: 12px; color: var(--muted); flex: 1; min-width: 160px; }
-  #status.ok { color: #2e7d32; }
-  #status.err { color: #c0392b; }
+/* Panels */
+main{max-width:1040px;margin:0 auto;padding:20px 16px 60px}
+.panel{display:none}
+.panel.active{display:block}
 
-  .chart-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 18px; }
-  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
-  .section-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-  .toggles { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-  .tog-btn { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border2); background: transparent; cursor: pointer; display: flex; align-items: center; gap: 5px; color: var(--muted); }
-  .tog-btn .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .chart-wrap { position: relative; width: 100%; height: 280px; }
+/* Paste */
+.paste-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px}
+.paste-section label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+.paste-section textarea{width:100%;height:70px;font-family:'Courier New',monospace;font-size:11px;border:1px solid var(--border2);border-radius:8px;padding:8px;resize:vertical;background:var(--bg);outline:none}
+.paste-section textarea:focus{border-color:var(--accent)}
+.paste-row{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+#status{font-size:12px;color:var(--muted);flex:1}
+#status.ok{color:#2e7d32}
+#status.err{color:#c0392b}
 
-  .month-select { font-size: 12px; border: 1px solid var(--border2); border-radius: 6px; padding: 5px 10px; background: var(--bg); color: var(--text); cursor: pointer; outline: none; }
-  .month-select:focus { border-color: var(--accent); }
+/* Cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:16px}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px}
+.metric-card .label{font-size:10px;color:var(--muted);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.metric-card .value{font-size:17px;font-weight:600}
+.card-note{font-size:10px;color:var(--muted);margin-bottom:10px}
 
-  .table-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; }
-  .table-header { padding: 10px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-  .legend-row { display: flex; gap: 14px; font-size: 11px; color: var(--muted); align-items: center; flex-wrap: wrap; }
-  .legend-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; min-width: 560px; }
-  th { text-align: right; padding: 8px 12px; font-size: 11px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; background: var(--bg); text-transform: uppercase; letter-spacing: 0.04em; }
-  th:first-child { text-align: left; }
-  td { text-align: right; padding: 7px 12px; font-size: 13px; border-bottom: 1px solid var(--border); }
-  td:first-child { text-align: left; font-size: 12px; }
-  tr:last-child td { border-bottom: none; }
-  td.total-cell { font-weight: 600; }
+/* Chart section */
+.chart-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px}
+.sec-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.toggles{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.tog-btn{font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;gap:4px;color:var(--muted)}
+.tog-btn .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.chart-wrap{position:relative;width:100%;height:270px}
 
-  tr.weekend td { background: var(--weekend-bg); }
-  tr.weekend td:first-child { color: #3a5aa8; font-weight: 500; }
-  tr.weekend:hover td { background: #e4eefb; }
-  tr:not(.weekend):hover td { background: #f9f8f5; }
+/* Table */
+.table-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
+.table-header{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.legend-row{display:flex;gap:12px;font-size:11px;color:var(--muted);align-items:center}
+.leg-sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:3px;vertical-align:middle}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:500px}
+th{text-align:right;padding:7px 10px;font-size:11px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;background:var(--bg);text-transform:uppercase;letter-spacing:.04em}
+th:first-child{text-align:left}
+td{text-align:right;padding:6px 10px;font-size:12px;border-bottom:1px solid var(--border)}
+td:first-child{text-align:left;font-size:11px}
+tr:last-child td{border-bottom:none}
+tr.weekend td{background:var(--weekend-bg)}
+tr.weekend td:first-child{color:#3a5aa8;font-weight:500}
+tr:not(.weekend):hover td{background:#f9f8f5}
+tr.weekend:hover td{background:#e4eefb}
+td.tc{font-weight:600}
+td.top{background:var(--top-bg);font-weight:600;position:relative}
+td.top::after{content:'★';font-size:7px;color:#c8a000;position:absolute;top:3px;right:3px}
+.empty-state{text-align:center;padding:36px 20px;color:var(--muted);font-size:13px}
 
-  td.top-val { background: var(--top-bg); font-weight: 600; position: relative; }
-  td.top-val::after { content: '★'; font-size: 8px; color: #c8a000; position: absolute; top: 3px; right: 3px; }
-
-  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; }
-  .footer-row { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; flex-wrap: wrap; gap: 8px; }
-  .footer-row span { font-size: 11px; color: var(--muted); }
+/* Buttons */
+.btn-primary{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{font-size:12px;color:var(--muted);background:none;border:1px solid var(--border2);border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{font-size:12px;color:var(--muted);background:none;border:1px solid var(--border2);border-radius:6px;padding:4px 10px;cursor:pointer}
+.btn-danger:hover{border-color:#c0392b;color:#c0392b}
+#import-input{display:none}
+.footer-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:0 2px}
+.footer-row span{font-size:11px;color:var(--muted)}
 </style>
 </head>
 <body>
 
 <div id="login-screen">
   <div class="login-card">
-    <h1>IRD Revenue Tracker</h1>
+    <h1>F&B Revenue Tracker</h1>
     <p>1 Hotel Melbourne</p>
     <input type="password" id="pw-input" placeholder="Password">
     <button onclick="checkPw()">Sign in</button>
@@ -113,9 +120,9 @@
 
 <div id="app">
   <header>
-    <h1>IRD Revenue Tracker</h1>
+    <h1>F&B Revenue Tracker — 1 Hotel Melbourne</h1>
     <div class="header-right">
-      <span id="day-count" style="font-size:12px;color:var(--muted);"></span>
+      <span id="day-count" style="font-size:12px;color:var(--muted)"></span>
       <button class="btn-ghost" onclick="exportData()">Export ↓</button>
       <button class="btn-ghost" onclick="document.getElementById('import-input').click()">Import ↑</button>
       <input type="file" id="import-input" accept=".json" onchange="importData(event)">
@@ -123,41 +130,26 @@
     </div>
   </header>
 
+  <div class="tab-bar" id="tab-bar"></div>
+
   <main>
-    <div id="cards" class="card-grid"></div>
+    <div class="toolbar">
+      <select class="month-select" id="month-filter" onchange="renderCurrent()">
+        <option value="all">All months</option>
+      </select>
+      <span id="filter-count" style="font-size:12px;color:var(--muted)"></span>
+    </div>
 
     <div class="paste-section">
-      <label>Paste full DOR sheet here (Ctrl+A → Ctrl+C from Excel, then paste)</label>
-      <textarea id="paste-area" placeholder="Paste DOR data..."></textarea>
+      <label>Paste full DOR sheet (Ctrl+A → Ctrl+C from Excel, then paste) — all outlets extracted automatically</label>
+      <textarea id="paste-area" placeholder="Paste DOR data here..."></textarea>
       <div class="paste-row">
         <button class="btn-primary" onclick="extractAndAdd()">Add day →</button>
         <span id="status"></span>
       </div>
     </div>
 
-    <div class="chart-section">
-      <div class="section-header">
-        <span class="section-title">Daily revenue</span>
-        <select class="month-select" id="month-filter" onchange="renderAll()">
-          <option value="all">All months</option>
-        </select>
-      </div>
-      <div class="toggles" id="toggles"></div>
-      <div class="chart-wrap">
-        <canvas id="chart" role="img" aria-label="Daily IRD revenue line chart by category"></canvas>
-      </div>
-    </div>
-
-    <div class="table-section">
-      <div class="table-header">
-        <span class="section-title" style="margin:0;">History</span>
-        <div class="legend-row">
-          <span><span class="legend-swatch" style="background:var(--weekend-bg);border:1px solid var(--weekend-border);"></span>Weekend</span>
-          <span><span class="legend-swatch" style="background:var(--top-bg);border:1px solid var(--top-border);"></span>Month best ★</span>
-        </div>
-      </div>
-      <div class="table-wrap"><div id="tbl-container"></div></div>
-    </div>
+    <div id="panels"></div>
 
     <div class="footer-row">
       <span id="footer-count"></span>
@@ -168,291 +160,468 @@
 
 <script>
 const PASSWORD = 'IRD@2026!';
-const STORE_KEY = 'ird_days_v1';
-const SESSION_KEY = 'ird_auth';
+const STORE_KEY = 'fb_days_v2';
+const SESSION_KEY = 'fb_auth';
 
-const SERIES = [
-  { k:'breakfast_revenue',      lb:'Breakfast',  co:'#e8960e', d:[] },
-  { k:'lunch_revenue',          lb:'Lunch',       co:'#1a9e6e', d:[] },
-  { k:'dinner_revenue',         lb:'Dinner',      co:'#2e7dd4', d:[] },
-  { k:'total_food_revenue',     lb:'Food total',  co:'#c94a20', d:[5,3] },
-  { k:'total_beverage_revenue', lb:'Beverage',    co:'#7060cc', d:[] },
-  { k:'surcharges',             lb:'Surcharges',  co:'#888880', d:[2,3] },
-  { k:'total_ird_revenue',      lb:'Total IRD',   co:'#1a1a18', d:[], w:2.5 },
+const OUTLETS = [
+  { key:'fromhere',   label:'From Here by Mike', short:'From Here', section:'From Here by Mike', total:'Total From Here by Mike', color:'#e8960e' },
+  { key:'cranebar',   label:'Crane Bar',          short:'Crane Bar',  section:'Crane Bar',         total:'Total Crane Bar',         color:'#1a9e6e' },
+  { key:'upstairs',   label:'Upstairs',           short:'Upstairs',   section:'Upstairs',          total:'Total Upstairs',          color:'#2e7dd4' },
+  { key:'neighbours', label:'Neighbours',         short:'Neighbours', section:'Neighbours',        total:'Total Neighbours',        color:'#7060cc' },
+  { key:'ird',        label:'In-Room Dining',     short:'IRD',        section:'In-Room Dining',    total:'Total In-Room Dining',    color:'#c94a20' },
+  { key:'banquets',   label:'Banquets',           short:'Banquets',   section:'Banquets',          total:'Total Banquets',          color:'#2a7a50' },
+  { key:'catering',   label:'Catering',           short:'Catering',   section:'Catering',          total:'Total Catering',          color:'#8b4ab8' },
 ];
 
-const TABLE_COLS = [
-  { k:'breakfast_revenue',      h:'Bfst $' },
-  { k:'lunch_revenue',          h:'Lunch $' },
-  { k:'dinner_revenue',         h:'Din $' },
-  { k:'total_food_revenue',     h:'Food $' },
-  { k:'total_beverage_revenue', h:'Bev $' },
-  { k:'surcharges',             h:'Surcharges' },
-  { k:'total_ird_revenue',      h:'Total IRD' },
-  { k:'total_ird_covers',       h:'Covers', noTop:true },
+const OUTLET_SERIES = [
+  { k:'breakfast_revenue', lb:'Breakfast', co:'#f59e0b', d:[] },
+  { k:'lunch_revenue',     lb:'Lunch',      co:'#10b981', d:[] },
+  { k:'dinner_revenue',    lb:'Dinner',     co:'#3b82f6', d:[] },
+  { k:'other_revenue',     lb:'Other',      co:'#a855f7', d:[] },
+  { k:'total_food_revenue',lb:'Food total', co:'#ef4444', d:[5,3] },
+  { k:'beverage_revenue',  lb:'Beverage',   co:'#6366f1', d:[] },
+  { k:'surcharges',        lb:'Surcharges', co:'#9ca3af', d:[2,3] },
+  { k:'total_revenue',     lb:'Total',      co:'#111827', d:[], w:2.5 },
 ];
 
-let active = new Set(SERIES.map(s => s.k));
-let chartObj = null;
+const OUTLET_TABLE_COLS = [
+  { k:'breakfast_revenue', h:'Bfst $' },
+  { k:'lunch_revenue',     h:'Lunch $' },
+  { k:'dinner_revenue',    h:'Din $' },
+  { k:'other_revenue',     h:'Other $' },
+  { k:'total_food_revenue',h:'Food $' },
+  { k:'beverage_revenue',  h:'Bev $' },
+  { k:'surcharges',        h:'Surcharges' },
+  { k:'total_revenue',     h:'Total', isTc:true },
+  { k:'total_covers',      h:'Covers', noTop:true, noFmt:true },
+];
+
+const DASH_TABLE_COLS = OUTLETS.map(o => ({ k:o.key, h:o.short, isTc: o.key==='ird' }))
+  .concat([{ k:'total_fb', h:'Total F&B', isTc:true }]);
+
 let days = [];
+let currentTab = 'dashboard';
+let charts = {};
+const activeSeriesMap = { dashboard: new Set(OUTLETS.map(o => o.key)) };
+OUTLETS.forEach(o => { activeSeriesMap[o.key] = new Set(OUTLET_SERIES.map(s => s.k)); });
 
+// ── Auth ──
 function checkPw() {
   if (document.getElementById('pw-input').value === PASSWORD) {
-    sessionStorage.setItem(SESSION_KEY, '1');
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
+    sessionStorage.setItem(SESSION_KEY,'1');
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
     init();
   } else {
-    document.getElementById('login-error').textContent = 'Incorrect password.';
-    document.getElementById('pw-input').value = '';
+    document.getElementById('login-error').textContent='Incorrect password.';
+    document.getElementById('pw-input').value='';
   }
 }
 function logout() {
   sessionStorage.removeItem(SESSION_KEY);
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
 }
 
+// ── Storage ──
 function loadDays() {
-  try { const r = localStorage.getItem(STORE_KEY); days = r ? JSON.parse(r) : []; days.sort((a,b) => a.date.localeCompare(b.date)); }
-  catch(e) { days = []; }
+  try { const r=localStorage.getItem(STORE_KEY); days=r?JSON.parse(r):[]; days.sort((a,b)=>a.date.localeCompare(b.date)); }
+  catch(e) { days=[]; }
 }
-function saveDays() { localStorage.setItem(STORE_KEY, JSON.stringify(days)); }
+function saveDays() { localStorage.setItem(STORE_KEY,JSON.stringify(days)); }
 
+// ── Export / Import ──
 function exportData() {
   if (!days.length) { alert('No data to export yet.'); return; }
-  const blob = new Blob([JSON.stringify({ exported: new Date().toISOString(), days }, null, 2)], { type:'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'ird-data-' + new Date().toISOString().slice(0,10) + '.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
+  const blob=new Blob([JSON.stringify({exported:new Date().toISOString(),days},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='fb-data-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(a.href);
 }
-
 function importData(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
+  const file=e.target.files[0]; if (!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
     try {
-      const parsed = JSON.parse(ev.target.result);
-      const imported = parsed.days || parsed;
-      if (!Array.isArray(imported)) { alert('Invalid file.'); return; }
-      let added = 0, updated = 0;
-      imported.forEach(d => {
+      const parsed=JSON.parse(ev.target.result);
+      const imported=parsed.days||parsed;
+      if (!Array.isArray(imported)){alert('Invalid file.');return;}
+      let added=0,updated=0;
+      imported.forEach(d=>{
         if (!d.date) return;
-        const exists = days.find(x => x.date === d.date);
-        if (exists) { Object.assign(exists, d); updated++; } else { days.push(d); added++; }
+        const ex=days.find(x=>x.date===d.date);
+        if (ex){Object.assign(ex,d);updated++;} else {days.push(d);added++;}
       });
-      days.sort((a,b) => a.date.localeCompare(b.date));
-      saveDays(); updateMonthFilter(); renderAll();
-      setStatus('Imported: ' + added + ' new, ' + updated + ' updated.', 'ok');
-    } catch(err) { alert('Could not read file: ' + err.message); }
-    e.target.value = '';
+      days.sort((a,b)=>a.date.localeCompare(b.date));
+      saveDays(); updateMonthFilter(); renderCurrent();
+      setStatus('Imported: '+added+' new, '+updated+' updated.','ok');
+    } catch(err){alert('Could not read file: '+err.message);}
+    e.target.value='';
   };
   reader.readAsText(file);
 }
 
+// ── Parser ──
 function parseNum(s) {
-  if (!s) return 0;
-  s = s.trim().replace(/,/g, '');
-  if (!s || s === '-' || s === '#DIV/0!') return 0;
-  if (s.startsWith('(') && s.endsWith(')')) return -(parseFloat(s.slice(1,-1)) || 0);
-  return parseFloat(s) || 0;
+  if (!s) return 0; s=s.trim().replace(/,/g,'');
+  if (!s||s==='-'||s==='#DIV/0!') return 0;
+  if (s.startsWith('(')&&s.endsWith(')')) return -(parseFloat(s.slice(1,-1))||0);
+  return parseFloat(s)||0;
 }
-function isMeaningful(s) { s = (s||'').trim(); return s !== '' && s !== '-' && s !== '#DIV/0!'; }
+function isMeaningful(s){s=(s||'').trim();return s!==''&&s!=='-'&&s!=='#DIV/0!';}
+function getMeaningful(cells,labelIdx){
+  return cells.slice(0,labelIdx).map(c=>({v:parseNum(c),s:c.trim()})).filter(x=>isMeaningful(x.s));
+}
+function makeEmptyOutlet(){
+  return {breakfast_covers:0,breakfast_avg_check:0,breakfast_revenue:0,
+    lunch_covers:0,lunch_avg_check:0,lunch_revenue:0,
+    dinner_covers:0,dinner_avg_check:0,dinner_revenue:0,
+    other_covers:0,other_avg_check:0,other_revenue:0,
+    food_allowances:0,total_food_revenue:0,
+    beverage_revenue:0,beverage_allowances:0,total_beverage_revenue:0,
+    surcharges:0,total_covers:0,total_avg_check:0,total_revenue:0};
+}
+
+const SECTION_MAP = new Map(OUTLETS.map(o=>[o.section,o.key]));
+const TOTAL_MAP   = new Map(OUTLETS.map(o=>[o.total,o.key]));
+const ROW_LABELS  = new Set(['Breakfast','Lunch','Dinner','Other',
+  'Less: Food Allowances','Total Food Revenue','Beverage Revenue',
+  'Less: Beverage Allowances','Total Beverage Revenue']);
 
 function parseDOR(text) {
-  const r = { date:null, breakfast_covers:0, breakfast_avg_check:0, breakfast_revenue:0,
-    lunch_covers:0, lunch_avg_check:0, lunch_revenue:0, dinner_covers:0, dinner_avg_check:0,
-    dinner_revenue:0, food_allowances:0, total_food_revenue:0, beverage_revenue:0,
-    beverage_allowances:0, total_beverage_revenue:0, surcharges:0,
-    total_ird_covers:0, total_ird_avg_check:0, total_ird_revenue:0 };
-  const dm = text.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-  if (dm) r.date = dm[3] + '-' + dm[1] + '-' + dm[2];
-  const ALL_LABELS = new Set(['In-Room Dining','Breakfast','Lunch','Dinner',
-    'Less: Food Allowances','Total Food Revenue','Beverage Revenue',
-    'Less: Beverage Allowances','Total Beverage Revenue','Total In-Room Dining']);
-  let inIRD = false;
+  const dm=text.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if (!dm) return null;
+  const date=dm[3]+'-'+dm[1]+'-'+dm[2];
+  const outlets={};
+  OUTLETS.forEach(o=>{outlets[o.key]=makeEmptyOutlet();});
+  let curOutlet=null, total_fb=0;
+
   for (const line of text.split(/\r?\n/)) {
-    const cells = line.split('\t');
-    let labelIdx = -1, label = '';
-    for (let i = 0; i < cells.length; i++) {
-      const t = cells[i].trim();
-      if (ALL_LABELS.has(t) || t.startsWith('Food and Beverage Surcharges')) { labelIdx = i; label = t; break; }
+    const cells=line.split('\t');
+    let found=false;
+    for (let i=0;i<cells.length;i++) {
+      const t=cells[i].trim();
+      if (!t) continue;
+
+      // Section header?
+      if (SECTION_MAP.has(t)) { curOutlet=SECTION_MAP.get(t); found=true; break; }
+
+      // Total row?
+      if (TOTAL_MAP.has(t)) {
+        const key=TOTAL_MAP.get(t);
+        const m=getMeaningful(cells,i);
+        outlets[key].total_covers=m[0]?.v||0;
+        outlets[key].total_avg_check=m[1]?.v||0;
+        outlets[key].total_revenue=m[2]?.v||0;
+        curOutlet=null; found=true; break;
+      }
+
+      // Grand total?
+      if (t==='TOTAL FOOD & BEVERAGE REVENUE') {
+        const m=getMeaningful(cells,i);
+        total_fb=m[0]?.v||0; found=true; break;
+      }
+
+      // Data row within outlet?
+      if (curOutlet && (ROW_LABELS.has(t)||t.startsWith('Food and Beverage Surcharges'))) {
+        const ot=outlets[curOutlet];
+        const m=getMeaningful(cells,i);
+        if      (t==='Breakfast')               {ot.breakfast_covers=m[0]?.v||0;ot.breakfast_avg_check=m[1]?.v||0;ot.breakfast_revenue=m[2]?.v||0;}
+        else if (t==='Lunch')                   {ot.lunch_covers=m[0]?.v||0;ot.lunch_avg_check=m[1]?.v||0;ot.lunch_revenue=m[2]?.v||0;}
+        else if (t==='Dinner')                  {ot.dinner_covers=m[0]?.v||0;ot.dinner_avg_check=m[1]?.v||0;ot.dinner_revenue=m[2]?.v||0;}
+        else if (t==='Other')                   {ot.other_covers=m[0]?.v||0;ot.other_avg_check=m[1]?.v||0;ot.other_revenue=m[2]?.v||0;}
+        else if (t==='Less: Food Allowances')   {ot.food_allowances=m[0]?.v||0;}
+        else if (t==='Total Food Revenue')      {ot.total_food_revenue=m[0]?.v||0;}
+        else if (t==='Beverage Revenue')        {ot.beverage_revenue=m[0]?.v||0;}
+        else if (t==='Less: Beverage Allowances'){ot.beverage_allowances=m[0]?.v||0;}
+        else if (t==='Total Beverage Revenue')  {ot.total_beverage_revenue=m[0]?.v||0;}
+        else if (t.startsWith('Food and Beverage Surcharges')){ot.surcharges=m[0]?.v||0;}
+        found=true; break;
+      }
     }
-    if (labelIdx < 0) continue;
-    if (label === 'In-Room Dining') { inIRD = true; continue; }
-    if (!inIRD) continue;
-    const meaningful = cells.slice(0, labelIdx).map(c => ({ v:parseNum(c), s:c.trim() })).filter(x => isMeaningful(x.s));
-    if      (label === 'Breakfast')               { r.breakfast_covers=meaningful[0]?.v||0; r.breakfast_avg_check=meaningful[1]?.v||0; r.breakfast_revenue=meaningful[2]?.v||0; }
-    else if (label === 'Lunch')                   { r.lunch_covers=meaningful[0]?.v||0; r.lunch_avg_check=meaningful[1]?.v||0; r.lunch_revenue=meaningful[2]?.v||0; }
-    else if (label === 'Dinner')                  { r.dinner_covers=meaningful[0]?.v||0; r.dinner_avg_check=meaningful[1]?.v||0; r.dinner_revenue=meaningful[2]?.v||0; }
-    else if (label === 'Less: Food Allowances')   { r.food_allowances=meaningful[0]?.v||0; }
-    else if (label === 'Total Food Revenue')      { r.total_food_revenue=meaningful[0]?.v||0; }
-    else if (label === 'Beverage Revenue')        { r.beverage_revenue=meaningful[0]?.v||0; }
-    else if (label === 'Less: Beverage Allowances') { r.beverage_allowances=meaningful[0]?.v||0; }
-    else if (label === 'Total Beverage Revenue')  { r.total_beverage_revenue=meaningful[0]?.v||0; }
-    else if (label.startsWith('Food and Beverage Surcharges')) { r.surcharges=meaningful[0]?.v||0; }
-    else if (label === 'Total In-Room Dining')    { r.total_ird_covers=meaningful[0]?.v||0; r.total_ird_avg_check=meaningful[1]?.v||0; r.total_ird_revenue=meaningful[2]?.v||0; inIRD=false; }
   }
-  return r;
+  return {date,outlets,total_fb};
 }
 
 function extractAndAdd() {
-  const raw = document.getElementById('paste-area').value;
-  if (!raw.trim()) { setStatus('Paste some data first.', 'err'); return; }
+  const raw=document.getElementById('paste-area').value;
+  if (!raw.trim()){setStatus('Paste some data first.','err');return;}
   try {
-    const d = parseDOR(raw);
-    if (!d.date) { setStatus('Could not find a date — make sure the header rows are included.', 'err'); return; }
-    if (!d.total_ird_revenue && !d.breakfast_revenue && !d.dinner_revenue) { setStatus('Parsed but all zeros — is the In-Room Dining section included?', 'err'); return; }
-    days = days.filter(x => x.date !== d.date);
-    days.push(d);
-    days.sort((a,b) => a.date.localeCompare(b.date));
-    saveDays();
-    document.getElementById('paste-area').value = '';
-    setStatus('Added ' + d.date + ' — Total IRD: ' + fmt(d.total_ird_revenue), 'ok');
-    updateMonthFilter(); renderAll();
-  } catch(e) { setStatus('Parse error: ' + e.message, 'err'); }
+    const d=parseDOR(raw);
+    if (!d){setStatus('Could not find a date — include header rows.','err');return;}
+    const anyData=OUTLETS.some(o=>d.outlets[o.key].total_revenue>0);
+    if (!anyData){setStatus('All zeros parsed — check paste includes outlet sections.','err');return;}
+    days=days.filter(x=>x.date!==d.date); days.push(d);
+    days.sort((a,b)=>a.date.localeCompare(b.date));
+    saveDays(); document.getElementById('paste-area').value='';
+    setStatus('Added '+d.date+' — Total F&B: '+fmt(d.total_fb),'ok');
+    updateMonthFilter(); renderCurrent(); updateCounts();
+  } catch(e){setStatus('Parse error: '+e.message,'err');}
 }
+function setStatus(msg,type){const el=document.getElementById('status');el.textContent=msg;el.className=type||'';}
 
-function setStatus(msg, type) {
-  const el = document.getElementById('status');
-  el.textContent = msg; el.className = type || '';
-}
-
-const fmt = n => '$' + Math.round(n || 0).toLocaleString();
-const fmtD = d => { if (!d) return ''; const [y,m,dy] = d.split('-'); return (+dy) + '/' + (+m); };
-
-function getMonthKey(date) { return date.slice(0,7); }
-function getMonthLabel(mk) {
-  const [y,m] = mk.split('-');
-  return new Date(+y, +m-1, 1).toLocaleString('en-AU', { month:'long', year:'numeric' });
-}
-function isWeekend(date) { const d = new Date(date + 'T00:00:00'); return d.getDay() === 0 || d.getDay() === 6; }
-
-function getFilteredDays() {
-  const sel = document.getElementById('month-filter')?.value || 'all';
-  return sel === 'all' ? days : days.filter(d => getMonthKey(d.date) === sel);
-}
-
-function updateMonthFilter() {
-  const sel = document.getElementById('month-filter');
-  const current = sel.value;
-  const months = [...new Set(days.map(d => getMonthKey(d.date)))].sort();
-  sel.innerHTML = '<option value="all">All months</option>' +
-    months.map(mk => '<option value="' + mk + '"' + (mk===current?' selected':'') + '>' + getMonthLabel(mk) + '</option>').join('');
-}
-
-function getTopValues(filtered) {
-  const tops = {};
-  TABLE_COLS.forEach(col => {
-    if (col.noTop) return;
-    const vals = filtered.map(d => d[col.k] || 0);
-    tops[col.k] = vals.length ? Math.max(...vals) : 0;
-  });
+// ── Helpers ──
+const fmt=n=>'$'+Math.round(n||0).toLocaleString();
+const fmtD=d=>{if(!d)return'';const[y,m,dy]=d.split('-');return(+dy)+'/'+(+m);};
+function getMonthKey(d){return d.slice(0,7);}
+function getMonthLabel(mk){const[y,m]=mk.split('-');return new Date(+y,+m-1,1).toLocaleString('en-AU',{month:'long',year:'numeric'});}
+function isWeekend(d){const dt=new Date(d+'T00:00:00');return dt.getDay()===0||dt.getDay()===6;}
+function getFiltered(){const v=document.getElementById('month-filter')?.value||'all';return v==='all'?days:days.filter(d=>getMonthKey(d.date)===v);}
+function getTopVals(rows,keys){
+  const tops={};
+  keys.forEach(k=>{const vals=rows.map(r=>r[k]||0);tops[k]=vals.length?Math.max(...vals):0;});
   return tops;
 }
-
-function renderCards() {
-  const el = document.getElementById('cards');
-  if (!days.length) { el.innerHTML = ''; return; }
-  const last = days[days.length - 1];
-  const items = [
-    { lb:'Breakfast', v:fmt(last.breakfast_revenue) },
-    { lb:'Lunch',     v:fmt(last.lunch_revenue) },
-    { lb:'Dinner',    v:fmt(last.dinner_revenue) },
-    { lb:'Food total',v:fmt(last.total_food_revenue) },
-    { lb:'Beverage',  v:fmt(last.total_beverage_revenue) },
-    { lb:'Surcharges',v:fmt(last.surcharges) },
-    { lb:'Total IRD', v:fmt(last.total_ird_revenue) },
-  ];
-  el.innerHTML = '<div style="grid-column:1/-1;font-size:11px;color:var(--muted);">Latest: ' + last.date + '</div>' +
-    items.map(i => '<div class="metric-card"><div class="label">' + i.lb + '</div><div class="value">' + i.v + '</div></div>').join('');
+function updateMonthFilter(){
+  const sel=document.getElementById('month-filter'); const cur=sel.value;
+  const months=[...new Set(days.map(d=>getMonthKey(d.date)))].sort();
+  sel.innerHTML='<option value="all">All months</option>'+months.map(mk=>'<option value="'+mk+'"'+(mk===cur?' selected':'')+'>'+getMonthLabel(mk)+'</option>').join('');
+}
+function updateCounts(){
+  const n=days.length; const txt=n?n+' day'+(n>1?'s':'')+' tracked':'';
+  document.getElementById('day-count').textContent=txt;
+  document.getElementById('footer-count').textContent=txt;
+  const f=getFiltered();
+  document.getElementById('filter-count').textContent=f.length!==n?'('+f.length+' shown)':'';
 }
 
-function renderToggles() {
-  const el = document.getElementById('toggles');
-  const filtered = getFilteredDays();
-  if (!filtered.length) { el.innerHTML = ''; return; }
-  el.innerHTML = SERIES.map(s => {
-    const on = active.has(s.k);
-    return '<button class="tog-btn" onclick="tog(\'' + s.k + '\')" style="' + (on ? 'border-color:' + s.co + ';color:' + s.co + ';background:' + s.co + '18;' : '') + '">' +
-      '<span class="dot" style="background:' + (on ? s.co : 'var(--border2)') + ';"></span>' + s.lb + '</button>';
-  }).join('');
-}
+// ── Build UI structure ──
+function buildUI(){
+  // Tab bar
+  const tabBar=document.getElementById('tab-bar');
+  const tabs=[{key:'dashboard',label:'Dashboard'},...OUTLETS.map(o=>({key:o.key,label:o.short}))];
+  tabBar.innerHTML=tabs.map(t=>'<button class="tab-btn'+(t.key==='dashboard'?' active':'')+'" onclick="switchTab(\''+t.key+'\')">'+t.label+'</button>').join('');
 
-function tog(k) { active.has(k) ? active.delete(k) : active.add(k); renderToggles(); renderChart(); }
+  // Panels
+  const panels=document.getElementById('panels');
+  let html='<div id="panel-dashboard" class="panel active">';
+  html+='<div id="dash-note" class="card-note"></div>';
+  html+='<div id="dash-cards" class="card-grid"></div>';
+  html+='<div class="chart-section"><div class="sec-title">Outlet revenue by day</div>';
+  html+='<div id="dash-toggles" class="toggles"></div>';
+  html+='<div class="chart-wrap"><canvas id="dash-chart" role="img" aria-label="Daily F&B revenue by outlet"></canvas></div></div>';
+  html+='<div class="table-section"><div class="table-header"><span class="sec-title" style="margin:0">History</span>';
+  html+='<div class="legend-row"><span><span class="leg-sw" style="background:#eef4ff;border:1px solid #c8d8f5"></span>Weekend</span><span><span class="leg-sw" style="background:#fffbea;border:1px solid #f0d060"></span>Month best ★</span></div></div>';
+  html+='<div class="table-wrap"><div id="dash-table"></div></div></div></div>';
 
-function renderChart() {
-  const filtered = getFilteredDays();
-  if (!filtered.length) return;
-  const ctx = document.getElementById('chart');
-  const datasets = SERIES.filter(s => active.has(s.k)).map(s => ({
-    label:s.lb, data:filtered.map(d => Math.round(d[s.k] || 0)),
-    borderColor:s.co, backgroundColor:s.co+'15',
-    borderWidth:s.w||1.5, borderDash:s.d,
-    pointRadius:filtered.length===1?5:3, pointHoverRadius:5, tension:0.3, fill:false,
-  }));
-  if (chartObj) chartObj.destroy();
-  chartObj = new Chart(ctx, {
-    type:'line', data:{ labels:filtered.map(d => fmtD(d.date)), datasets },
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:c => ' ' + c.dataset.label + ': $' + c.parsed.y.toLocaleString() } } },
-      scales:{
-        x:{ grid:{ color:'rgba(0,0,0,0.05)' }, ticks:{ font:{ size:11 }, color:'#888', autoSkip:false, maxRotation:45 } },
-        y:{ grid:{ color:'rgba(0,0,0,0.05)' }, ticks:{ font:{ size:11 }, color:'#888', callback:v => '$' + v.toLocaleString() } }
-      }
-    }
+  OUTLETS.forEach(o=>{
+    html+='<div id="panel-'+o.key+'" class="panel">';
+    html+='<div id="'+o.key+'-note" class="card-note"></div>';
+    html+='<div id="'+o.key+'-cards" class="card-grid"></div>';
+    html+='<div class="chart-section"><div class="sec-title">'+o.label+' — daily breakdown</div>';
+    html+='<div id="'+o.key+'-toggles" class="toggles"></div>';
+    html+='<div class="chart-wrap"><canvas id="'+o.key+'-chart" role="img" aria-label="'+o.label+' daily revenue breakdown"></canvas></div></div>';
+    html+='<div class="table-section"><div class="table-header"><span class="sec-title" style="margin:0">History</span>';
+    html+='<div class="legend-row"><span><span class="leg-sw" style="background:#eef4ff;border:1px solid #c8d8f5"></span>Weekend</span><span><span class="leg-sw" style="background:#fffbea;border:1px solid #f0d060"></span>Month best ★</span></div></div>';
+    html+='<div class="table-wrap"><div id="'+o.key+'-table"></div></div></div></div>';
   });
+  panels.innerHTML=html;
 }
 
-function renderTable() {
-  const el = document.getElementById('tbl-container');
-  const filtered = getFilteredDays();
-  if (!filtered.length) { el.innerHTML = '<div class="empty-state">No data yet — paste a DOR above to get started.</div>'; return; }
-  const tops = getTopValues(filtered);
-  const head = '<th>Date</th>' + TABLE_COLS.map(c => '<th>' + c.h + '</th>').join('');
-  const rows = [...filtered].reverse().map(d => {
-    const weekend = isWeekend(d.date);
-    const cells = TABLE_COLS.map(col => {
-      const val = d[col.k] || 0;
-      const isTop = !col.noTop && tops[col.k] > 0 && Math.round(val) === Math.round(tops[col.k]);
-      const display = col.k === 'total_ird_covers' ? Math.round(val) : fmt(val);
-      const cls = [col.k === 'total_ird_revenue' ? 'total-cell' : '', isTop ? 'top-val' : ''].filter(Boolean).join(' ');
-      return '<td' + (cls ? ' class="' + cls + '"' : '') + '>' + display + '</td>';
-    }).join('');
-    const dayLabel = d.date + (weekend ? ' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:4px;">WE</span>' : '');
-    return '<tr class="' + (weekend ? 'weekend' : '') + '"><td>' + dayLabel + '</td>' + cells + '</tr>';
+function switchTab(key){
+  currentTab=key;
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{
+    const tabs=['dashboard',...OUTLETS.map(o=>o.key)];
+    b.classList.toggle('active',tabs[i]===key);
+  });
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+key).classList.add('active');
+  renderCurrent();
+}
+
+// ── Render ──
+function renderCurrent(){
+  updateCounts();
+  if (currentTab==='dashboard') renderDashboard();
+  else renderOutlet(currentTab);
+}
+
+function renderDashboard(){
+  const filtered=getFiltered();
+  const note=document.getElementById('dash-note');
+  note.textContent=filtered.length?'Latest: '+filtered[filtered.length-1].date:'';
+
+  // Cards — last day outlet totals
+  const cardsEl=document.getElementById('dash-cards');
+  if (!filtered.length){cardsEl.innerHTML='';document.getElementById('dash-table').innerHTML='<div class="empty-state">No data yet — paste a DOR above.</div>';renderDashChart([]);renderDashToggles();return;}
+  const last=filtered[filtered.length-1];
+  cardsEl.innerHTML=OUTLETS.map(o=>'<div class="metric-card"><div class="label">'+o.short+'</div><div class="value">'+fmt(last.outlets[o.key].total_revenue)+'</div></div>').join('')
+    +'<div class="metric-card"><div class="label">Total F&B</div><div class="value">'+fmt(last.total_fb)+'</div></div>';
+
+  renderDashToggles();
+  renderDashChart(filtered);
+  renderDashTable(filtered);
+}
+
+function renderDashToggles(){
+  const el=document.getElementById('dash-toggles');
+  el.innerHTML=OUTLETS.map(o=>{
+    const on=activeSeriesMap.dashboard.has(o.key);
+    return '<button class="tog-btn" onclick="togDash(\''+o.key+'\')" style="'+(on?'border-color:'+o.color+';color:'+o.color+';background:'+o.color+'18;':'')+'">'
+      +'<span class="dot" style="background:'+(on?o.color:'var(--border2)')+'"></span>'+o.short+'</button>';
   }).join('');
-  el.innerHTML = '<table><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table>';
 }
 
-function renderAll() {
-  renderCards(); renderToggles(); renderChart(); renderTable();
-  const n = days.length;
-  const txt = n ? n + ' day' + (n>1?'s':'') + ' tracked' : '';
-  document.getElementById('day-count').textContent = txt;
-  document.getElementById('footer-count').textContent = txt;
+function togDash(k){activeSeriesMap.dashboard.has(k)?activeSeriesMap.dashboard.delete(k):activeSeriesMap.dashboard.add(k);renderDashToggles();renderDashChart(getFiltered());}
+
+function renderDashChart(filtered){
+  const ctx=document.getElementById('dash-chart');
+  if (charts.dashboard){charts.dashboard.destroy();delete charts.dashboard;}
+  if (!filtered.length) return;
+  const datasets=OUTLETS.filter(o=>activeSeriesMap.dashboard.has(o.key)).map(o=>({
+    label:o.short, data:filtered.map(d=>Math.round(d.outlets[o.key].total_revenue||0)),
+    borderColor:o.color, backgroundColor:o.color+'15', borderWidth:1.5, pointRadius:filtered.length===1?5:2,
+    pointHoverRadius:4, tension:0.3, fill:false,
+  }));
+  charts.dashboard=new Chart(ctx,{type:'line',data:{labels:filtered.map(d=>fmtD(d.date)),datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': $'+c.parsed.y.toLocaleString()}}},
+      scales:{x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},color:'#888',autoSkip:false,maxRotation:45}},
+        y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},color:'#888',callback:v=>'$'+v.toLocaleString()}}}}});
 }
 
-function clearAll() {
-  if (!confirm('Clear all saved IRD data? This cannot be undone.')) return;
-  days = []; localStorage.removeItem(STORE_KEY);
-  if (chartObj) { chartObj.destroy(); chartObj = null; }
-  document.getElementById('month-filter').innerHTML = '<option value="all">All months</option>';
-  renderAll(); setStatus('', '');
+function renderDashTable(filtered){
+  const el=document.getElementById('dash-table');
+  if (!filtered.length){el.innerHTML='<div class="empty-state">No data yet.</div>';return;}
+  const rows=[...filtered].reverse();
+  // Top values per column
+  const topVals={};
+  OUTLETS.forEach(o=>{const vals=filtered.map(d=>d.outlets[o.key].total_revenue||0);topVals[o.key]=Math.max(...vals);});
+  const totalVals=filtered.map(d=>d.total_fb||0);topVals['total_fb']=Math.max(...totalVals);
+
+  const head='<th>Date</th>'+OUTLETS.map(o=>'<th>'+o.short+'</th>').join('')+'<th>Total F&B</th>';
+  const rowsHtml=rows.map(d=>{
+    const we=isWeekend(d.date);
+    const cells=OUTLETS.map(o=>{
+      const v=d.outlets[o.key].total_revenue||0;
+      const isTop=topVals[o.key]>0&&Math.round(v)===Math.round(topVals[o.key]);
+      return '<td'+(isTop?' class="top"':'')+'>'+fmt(v)+'</td>';
+    }).join('');
+    const tv=d.total_fb||0;const isTTop=topVals.total_fb>0&&Math.round(tv)===Math.round(topVals.total_fb);
+    const label=d.date+(we?' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:3px">WE</span>':'');
+    return '<tr class="'+(we?'weekend':'')+'"><td>'+label+'</td>'+cells+'<td class="tc'+(isTTop?' top':'')+'>'+fmt(tv)+'</td></tr>';
+  }).join('');
+  el.innerHTML='<table><thead><tr>'+head+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>';
 }
 
-function init() { loadDays(); updateMonthFilter(); renderAll(); }
+function renderOutlet(key){
+  const o=OUTLETS.find(x=>x.key===key);
+  const filtered=getFiltered();
+  const note=document.getElementById(key+'-note');
+  note.textContent=filtered.length?'Latest: '+filtered[filtered.length-1].date:'';
 
-window.addEventListener('DOMContentLoaded', () => {
-  if (sessionStorage.getItem(SESSION_KEY) === '1') {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
+  const cardsEl=document.getElementById(key+'-cards');
+  if (!filtered.length){cardsEl.innerHTML='';document.getElementById(key+'-table').innerHTML='<div class="empty-state">No data yet — paste a DOR above.</div>';renderOutletChart(key,[]);renderOutletToggles(key,[]);return;}
+  const last=filtered[filtered.length-1].outlets[key];
+  const cardItems=[
+    {lb:'Breakfast',v:fmt(last.breakfast_revenue)},
+    {lb:'Lunch',v:fmt(last.lunch_revenue)},
+    {lb:'Dinner',v:fmt(last.dinner_revenue)},
+    {lb:'Other',v:fmt(last.other_revenue)},
+    {lb:'Food total',v:fmt(last.total_food_revenue)},
+    {lb:'Beverage',v:fmt(last.beverage_revenue)},
+    {lb:'Surcharges',v:fmt(last.surcharges)},
+    {lb:'Total',v:fmt(last.total_revenue)},
+  ];
+  cardsEl.innerHTML=cardItems.map(i=>'<div class="metric-card"><div class="label">'+i.lb+'</div><div class="value">'+i.v+'</div></div>').join('');
+
+  // Determine which series have any data (suppress all-zero)
+  const activeSeries=OUTLET_SERIES.filter(s=>{
+    if (!activeSeriesMap[key]) return true;
+    const hasData=filtered.some(d=>(d.outlets[key][s.k]||0)!==0);
+    return hasData;
+  });
+
+  renderOutletToggles(key,activeSeries);
+  renderOutletChart(key,filtered,activeSeries);
+  renderOutletTable(key,filtered);
+}
+
+function renderOutletToggles(key,activeSeries){
+  const el=document.getElementById(key+'-toggles');
+  if (!activeSeries||!activeSeries.length){el.innerHTML='';return;}
+  el.innerHTML=activeSeries.map(s=>{
+    const on=activeSeriesMap[key]&&activeSeriesMap[key].has(s.k);
+    return '<button class="tog-btn" onclick="togOutlet(\''+key+'\',\''+s.k+'\')" style="'+(on?'border-color:'+s.co+';color:'+s.co+';background:'+s.co+'18;':'')+'">'
+      +'<span class="dot" style="background:'+(on?s.co:'var(--border2)')+'"></span>'+s.lb+'</button>';
+  }).join('');
+}
+
+function togOutlet(key,sk){
+  if (!activeSeriesMap[key]) activeSeriesMap[key]=new Set(OUTLET_SERIES.map(s=>s.k));
+  activeSeriesMap[key].has(sk)?activeSeriesMap[key].delete(sk):activeSeriesMap[key].add(sk);
+  renderOutlet(key);
+}
+
+function renderOutletChart(key,filtered,activeSeries){
+  const ctx=document.getElementById(key+'-chart');
+  if (charts[key]){charts[key].destroy();delete charts[key];}
+  if (!filtered||!filtered.length) return;
+  const series=(activeSeries||OUTLET_SERIES).filter(s=>activeSeriesMap[key]&&activeSeriesMap[key].has(s.k));
+  const datasets=series.map(s=>({
+    label:s.lb, data:filtered.map(d=>Math.round(d.outlets[key][s.k]||0)),
+    borderColor:s.co, backgroundColor:s.co+'15', borderWidth:s.w||1.5, borderDash:s.d||[],
+    pointRadius:filtered.length===1?5:2, pointHoverRadius:4, tension:0.3, fill:false,
+  }));
+  charts[key]=new Chart(ctx,{type:'line',data:{labels:filtered.map(d=>fmtD(d.date)),datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': $'+c.parsed.y.toLocaleString()}}},
+      scales:{x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},color:'#888',autoSkip:false,maxRotation:45}},
+        y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},color:'#888',callback:v=>'$'+v.toLocaleString()}}}}});
+}
+
+function renderOutletTable(key,filtered){
+  const el=document.getElementById(key+'-table');
+  if (!filtered.length){el.innerHTML='<div class="empty-state">No data yet.</div>';return;}
+  const rows=[...filtered].reverse();
+  const outletRows=filtered.map(d=>d.outlets[key]);
+
+  // Top values per column (revenue cols only)
+  const topCols=OUTLET_TABLE_COLS.filter(c=>!c.noTop&&!c.noFmt);
+  const tops={};
+  topCols.forEach(c=>{const vals=outletRows.map(r=>r[c.k]||0);tops[c.k]=Math.max(...vals);});
+
+  // Detect which cols have any non-zero data
+  const visibleCols=OUTLET_TABLE_COLS.filter(c=>{
+    if (c.k==='total_revenue'||c.k==='total_covers') return true;
+    return outletRows.some(r=>(r[c.k]||0)!==0);
+  });
+
+  const head='<th>Date</th>'+visibleCols.map(c=>'<th>'+c.h+'</th>').join('');
+  const rowsHtml=rows.map(d=>{
+    const ot=d.outlets[key]; const we=isWeekend(d.date);
+    const cells=visibleCols.map(c=>{
+      const v=ot[c.k]||0;
+      const display=c.noFmt?Math.round(v):fmt(v);
+      const isTop=!c.noTop&&tops[c.k]>0&&Math.round(v)===Math.round(tops[c.k]);
+      const cls=(c.isTc?'tc ':''+(isTop?'top':''));
+      return '<td'+(cls.trim()?' class="'+cls.trim()+'"':'')+'>'+display+'</td>';
+    }).join('');
+    const label=d.date+(we?' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:3px">WE</span>':'');
+    return '<tr class="'+(we?'weekend':'')+'"><td>'+label+'</td>'+cells+'</tr>';
+  }).join('');
+  el.innerHTML='<table><thead><tr>'+head+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>';
+}
+
+function clearAll(){
+  if (!confirm('Clear all data? This cannot be undone.')) return;
+  days=[]; localStorage.removeItem(STORE_KEY);
+  Object.values(charts).forEach(c=>c.destroy()); Object.keys(charts).forEach(k=>delete charts[k]);
+  document.getElementById('month-filter').innerHTML='<option value="all">All months</option>';
+  renderCurrent(); updateCounts(); setStatus('','');
+}
+
+function init(){
+  buildUI(); loadDays(); updateMonthFilter(); renderCurrent(); updateCounts();
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  if (sessionStorage.getItem(SESSION_KEY)==='1'){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
     init();
   }
-  document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkPw(); });
+  document.getElementById('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter')checkPw();});
 });
 </script>
 </body>
