@@ -904,7 +904,7 @@ function renderOccupancy(){
     {key:'occ',    label:'Occ%',    data:byDate.map(d=>+d.occ.toFixed(1)),           borderColor:'#2e7dd4',backgroundColor:'#2e7dd415',yAxisID:'y', borderWidth:2,  pointRadius:2,tension:0.3,fill:false,borderDash:[]},
     {key:'mtd',    label:'MTD Avg%',data:byDate.map(d=>+calcMTDAvg(d.date).toFixed(1)),borderColor:'#e8960e',backgroundColor:'transparent',   yAxisID:'y', borderWidth:1.5,pointRadius:0,tension:0.3,fill:false,borderDash:[5,4]},
     {key:'guests', label:'Guests',  data:byDate.map(d=>d.total_guests),               borderColor:'#7060cc',backgroundColor:'#7060cc15',yAxisID:'y2',borderWidth:1.5,pointRadius:2,tension:0.3,fill:false,borderDash:[]},
-    {key:'density',label:'Density', data:byDate.map(d=>d.density||0),                 borderColor:'#2a7a50',backgroundColor:'#2a7a5015',yAxisID:'y3',borderWidth:1.5,pointRadius:2,tension:0.3,fill:false,borderDash:[]},
+    {key:'density',label:'Density', data:byDate.map(d=>d.rms_sold>0?+((d.total_guests/d.rms_sold).toFixed(2)):0), borderColor:'#2a7a50',backgroundColor:'#2a7a5015',yAxisID:'y3',borderWidth:1.5,pointRadius:2,tension:0.3,fill:false,borderDash:[]},
   ];
   const showY2=occChartActive.guests, showY3=occChartActive.density;
   const ctx=document.getElementById('occ-chart-canvas');
@@ -926,7 +926,7 @@ function renderOccupancy(){
     }
   });
   // Table
-  const tops={occ:Math.max(...filtered.map(d=>d.occ)),total_guests:Math.max(...filtered.map(d=>d.total_guests)),rms_sold:Math.max(...filtered.map(d=>d.rms_sold)),trans_rms:Math.max(...filtered.map(d=>d.trans_rms)),grp_pkup:Math.max(...filtered.map(d=>d.grp_pkup)),density:Math.max(...filtered.map(d=>d.density||0))};
+  const tops={occ:Math.max(...filtered.map(d=>d.occ)),total_guests:Math.max(...filtered.map(d=>d.total_guests)),rms_sold:Math.max(...filtered.map(d=>d.rms_sold)),trans_rms:Math.max(...filtered.map(d=>d.trans_rms)),grp_pkup:Math.max(...filtered.map(d=>d.grp_pkup)),density:Math.max(...filtered.map(d=>d.rms_sold>0?d.total_guests/d.rms_sold:0))};
   const head=thSort('occupancy','date','Date',ss)+thSort('occupancy','total_guests','Guests',ss)+thSort('occupancy','occ','Occ %',ss)+'<th>MTD Avg %</th>'+thSort('occupancy','rms_sold','Rms Sold',ss)+thSort('occupancy','trans_rms','Trans Rms',ss)+thSort('occupancy','grp_pkup','Grp Pkup',ss)+thSort('occupancy','density','Density',ss);
   const rowsHtml=sorted.map(d=>{
     const we=isWeekend(d.date);
@@ -940,7 +940,7 @@ function renderOccupancy(){
       +tc('rms_sold',d.rms_sold,d.rms_sold)
       +tc('trans_rms',d.trans_rms,d.trans_rms)
       +tc('grp_pkup',d.grp_pkup,d.grp_pkup)
-      +tc('density',d.density||0,(d.density||0).toFixed(2))
+      +tc('density',d.rms_sold>0?d.total_guests/d.rms_sold:0,(d.rms_sold>0?(d.total_guests/d.rms_sold).toFixed(2):'—'))
       +'</tr>';
   }).join('');
   tblEl.innerHTML='<table style="min-width:540px"><thead><tr>'+head+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>';
