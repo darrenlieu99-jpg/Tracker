@@ -108,6 +108,13 @@ tr.weekend:hover td.sticky-date{background:#e4eefb}
 th.sticky-date{background:var(--bg);text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 td.capture{font-size:12px;color:#2a7a50;font-weight:500}
 td.capture-high{font-size:12px;color:#c94a20;font-weight:600}
+tr.has-note td{background:rgba(245,158,11,0.06)}
+tr.has-note.weekend td{background:rgba(245,158,11,0.1)}
+tr.has-note td.sticky-date,tr.has-note td.date-cell{box-shadow:inset 3px 0 0 #f59e0b}
+td.date-cell,td.sticky-date{cursor:pointer}
+td.date-cell:hover,td.sticky-date:hover{text-decoration:underline;text-underline-offset:2px}
+.note-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#f59e0b;vertical-align:middle;margin-left:5px;flex-shrink:0}
+#note-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center}
 
 /* Buttons */
 .btn-primary{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
@@ -268,10 +275,41 @@ function fmtDateShort(d){
 const activeSeriesMap = { dashboard: new Set(OUTLETS.map(o => o.key)) };
 OUTLETS.forEach(o => { activeSeriesMap[o.key] = new Set(OUTLET_SERIES.map(s => s.k)); });
 const occChartActive = { occ:true, mtd:true, guests:true };
+const GUEST_SERIES = { k:'guests', lb:'Guests', co:'#7060cc', d:[], isGuest:true };
 
 function togOccChart(key){
   occChartActive[key]=!occChartActive[key];
   renderOccupancy();
+}
+
+// ── Notes ──
+const NOTES_KEY='notes_v1';
+let notes={};
+function loadNotes(){try{const r=localStorage.getItem(NOTES_KEY);notes=r?JSON.parse(r):{};}catch(e){notes={};}}
+function saveNotes(){localStorage.setItem(NOTES_KEY,JSON.stringify(notes));}
+function openNote(date){
+  document.getElementById('note-date').textContent=date;
+  document.getElementById('note-text').value=notes[date]||'';
+  document.getElementById('note-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('note-text').focus(),50);
+}
+function closeNote(){document.getElementById('note-modal').style.display='none';}
+function saveNote(){
+  const date=document.getElementById('note-date').textContent;
+  const text=document.getElementById('note-text').value.trim();
+  if(text) notes[date]=text; else delete notes[date];
+  saveNotes(); closeNote(); renderCurrent();
+}
+function deleteNote(){
+  const date=document.getElementById('note-date').textContent;
+  delete notes[date]; saveNotes(); closeNote(); renderCurrent();
+}
+function noteDot(date){
+  const n=notes[date]; if(!n) return '';
+  return ' <span class="note-dot" title="'+n.replace(/"/g,'&quot;')+'"></span>';
+}
+function noteRowClass(date, weekend){
+  return (weekend?'weekend':'')+(notes[date]?' has-note':'');
 }
 
 // ── Auth ──
@@ -583,8 +621,8 @@ function renderDashTable(filtered){
       return '<td'+(isTop?' class="top"':'')+'>'+fmt(v)+'</td>';
     }).join('');
     const tv=d.total_fb||0;const isTTop=topVals.total_fb>0&&Math.round(tv)===Math.round(topVals.total_fb);
-    const label=fmtDateShort(d.date)+(we?' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:3px">WE</span>':'');
-    return '<tr class="'+(we?'weekend':'')+'"><td class="sticky-date">'+label+'</td>'+cells+'<td class="tc'+(isTTop?' top':'')+'>'+fmt(tv)+'</td></tr>';
+    const label=fmtDateShort(d.date)+(we?' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:3px">WE</span>':'')+noteDot(d.date);
+    return '<tr class="'+noteRowClass(d.date,we)+'"><td class="sticky-date" onclick="openNote(\''+d.date+'\')">'+label+'</td>'+cells+'<td class="tc'+(isTTop?' top':'')+'>'+fmt(tv)+'</td></tr>';
   }).join('');
   el.innerHTML='<table style="min-width:760px"><thead><tr>'+head+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>';
 }
@@ -614,6 +652,12 @@ function renderOutlet(key){
     const hasData=filtered.some(d=>(d.outlets[key][s.k]||0)!==0);
     return hasData;
   });
+  // Add guests series for IRD and Neighbours when occ data available
+  const guestOutlets=['ird','neighbours'];
+  if(guestOutlets.includes(key)&&filtered.some(d=>getOccForDate(d.date))){
+    if(!activeSeriesMap[key].has('guests')) activeSeriesMap[key].add('guests');
+    activeSeries.push(GUEST_SERIES);
+  }
 
   renderOutletToggles(key,activeSeries);
   renderOutletChart(key,filtered,activeSeries);
@@ -641,16 +685,25 @@ function renderOutletChart(key,filtered,activeSeries){
   if (charts[key]){charts[key].destroy();delete charts[key];}
   if (!filtered||!filtered.length) return;
   const series=(activeSeries||OUTLET_SERIES).filter(s=>activeSeriesMap[key]&&activeSeriesMap[key].has(s.k));
-  const datasets=series.map(s=>({
-    label:s.lb, data:filtered.map(d=>Math.round(d.outlets[key][s.k]||0)),
-    borderColor:s.co, backgroundColor:s.co+'15', borderWidth:s.w||1.5, borderDash:s.d||[],
-    pointRadius:filtered.length===1?5:2, pointHoverRadius:4, tension:0.3, fill:false,
-  }));
+  const hasGuestsSeries=series.some(s=>s.isGuest);
+  const datasets=series.map(s=>{
+    if(s.isGuest) return {
+      label:'Guests', data:filtered.map(d=>getOccForDate(d.date)?.total_guests||null),
+      borderColor:'#7060cc', backgroundColor:'#7060cc15', borderWidth:1.5, borderDash:[],
+      pointRadius:filtered.length===1?5:2, pointHoverRadius:4, tension:0.3, fill:false, yAxisID:'y2',
+    };
+    return {
+      label:s.lb, data:filtered.map(d=>Math.round(d.outlets[key][s.k]||0)),
+      borderColor:s.co, backgroundColor:s.co+'15', borderWidth:s.w||1.5, borderDash:s.d||[],
+      pointRadius:filtered.length===1?5:2, pointHoverRadius:4, tension:0.3, fill:false, yAxisID:'y',
+    };
+  });
+  const scaleY={grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},color:'#888',callback:v=>'$'+v.toLocaleString()}};
+  const scaleY2={type:'linear',position:'right',display:hasGuestsSeries,ticks:{font:{size:11},color:'#7060cc'},grid:{drawOnChartArea:false}};
   charts[key]=new Chart(ctx,{type:'line',data:{labels:filtered.map(d=>fmtD(d.date)),datasets},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': $'+c.parsed.y.toLocaleString()}}},
-      scales:{x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},color:'#888',autoSkip:false,maxRotation:45}},
-        y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},color:'#888',callback:v=>'$'+v.toLocaleString()}}}}});
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='y2'?' Guests: '+c.parsed.y.toLocaleString():' '+c.dataset.label+': $'+c.parsed.y.toLocaleString()}}},
+      scales:{x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11},color:'#888',autoSkip:false,maxRotation:45}},y:scaleY,y2:scaleY2}}});
 }
 
 function renderOutletTable(key,filtered){
@@ -666,7 +719,7 @@ function renderOutletTable(key,filtered){
     return outletRows.some(r=>(r[c.k]||0)!==0);
   });
   const hasGuests=filtered.some(d=>getOccForDate(d.date)!==null);
-  const showCapture=key==='ird'&&hasGuests;
+  const showCapture=(key==='ird'||key==='neighbours')&&hasGuests;
   const guestHead=hasGuests?thSort(key,'total_guests','Guests',ss):'';
   const captureHead=showCapture?'<th style="color:#2a7a50">Capture %</th>':'';
   const head=thSort(key,'date','Date',ss)+guestHead+visibleCols.map(c=>thSort(key,c.k,c.h,ss)).join('')+captureHead;
@@ -681,7 +734,7 @@ function renderOutletTable(key,filtered){
       const cls=(c.isTc?'tc ':''+(isTop?'top':'')).trim();
       return '<td'+(cls?' class="'+cls+'"':'')+'>'+display+'</td>';
     }).join('');
-    const label=fmtDateShort(d.date)+(we?' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:3px">WE</span>':'');
+    const label=fmtDateShort(d.date)+(we?' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:3px">WE</span>':'')+noteDot(d.date);
     let captureCell='';
     if(showCapture){
       if(occ&&occ.total_guests>0){
@@ -690,7 +743,7 @@ function renderOutletTable(key,filtered){
         captureCell='<td class="'+cls+'">'+pct+'%</td>';
       } else { captureCell='<td class="capture">—</td>'; }
     }
-    return '<tr class="'+(we?'weekend':'')+'"><td class="date-cell">'+label+'</td>'+guestCell+cells+captureCell+'</tr>';
+    return '<tr class="'+noteRowClass(d.date,we)+'"><td class="date-cell" onclick="openNote(\''+d.date+'\')">'+label+'</td>'+guestCell+cells+captureCell+'</tr>';
   }).join('');
   el.innerHTML='<table style="min-width:480px"><thead><tr>'+head+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>';
 }
@@ -869,8 +922,8 @@ function renderOccupancy(){
     const we=isWeekend(d.date);
     const mtd=calcMTDAvg(d.date).toFixed(1);
     const tc=(key,val,display)=>'<td'+(tops[key]>0&&val===tops[key]?' class="top"':'')+'>'+display+'</td>';
-    const label=fmtDateShort(d.date)+(we?' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:3px">WE</span>':'');
-    return '<tr class="'+(we?'weekend':'')+'"><td class="date-cell">'+label+'</td>'
+    const label=fmtDateShort(d.date)+(we?' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:3px">WE</span>':'')+noteDot(d.date);
+    return '<tr class="'+noteRowClass(d.date,we)+'"><td class="date-cell" onclick="openNote(\''+d.date+'\')">'+label+'</td>'
       +tc('total_guests',d.total_guests,d.total_guests.toLocaleString())
       +tc('occ',d.occ,d.occ.toFixed(1)+'%')
       +'<td>'+mtd+'%</td>'
@@ -890,7 +943,7 @@ function clearAll(){
   renderCurrent(); updateCounts(); setStatus('','');
 }
 
-function init(){ buildUI(); loadDays(); loadOccDays(); updateMonthFilter(); renderCurrent(); updateCounts(); }
+function init(){ buildUI(); loadDays(); loadOccDays(); loadNotes(); updateMonthFilter(); renderCurrent(); updateCounts(); }
 
 window.addEventListener('DOMContentLoaded',()=>{
   if (sessionStorage.getItem(SESSION_KEY)==='1'){
@@ -901,5 +954,17 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter')checkPw();});
 });
 </script>
+<div id="note-modal">
+  <div style="background:#fff;border-radius:12px;padding:24px;width:400px;max-width:calc(100% - 40px);box-shadow:0 8px 32px rgba(0,0,0,0.25)">
+    <div style="font-size:14px;font-weight:600;color:#1a1a18;margin-bottom:3px">Note — <span id="note-date"></span></div>
+    <div style="font-size:11px;color:#6b6960;margin-bottom:12px">Click any date row to add or edit notes. Days with notes show an amber dot.</div>
+    <textarea id="note-text" placeholder="e.g. Staff event, low walk-ins, FHBM private dining..." style="width:100%;height:90px;border:1px solid #e2e0da;border-radius:8px;padding:10px;font-size:13px;resize:vertical;font-family:inherit;outline:none;box-sizing:border-box;line-height:1.5"></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;align-items:center">
+      <button onclick="deleteNote()" style="font-size:12px;color:#c0392b;background:none;border:1px solid #e2e0da;border-radius:6px;padding:6px 12px;cursor:pointer;margin-right:auto">Delete note</button>
+      <button onclick="closeNote()" style="font-size:12px;color:#6b6960;background:none;border:1px solid #e2e0da;border-radius:6px;padding:6px 12px;cursor:pointer">Cancel</button>
+      <button onclick="saveNote()" style="font-size:12px;color:#fff;background:#1a1a18;border:none;border-radius:6px;padding:6px 16px;font-weight:500;cursor:pointer">Save</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
