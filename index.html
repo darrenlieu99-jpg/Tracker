@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>F&B Revenue Tracker</title>
+<title>F&B Revenue Tracker — 1 Hotel Melbourne</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -93,6 +93,13 @@ td.tc{font-weight:600}
 td.top{background:var(--top-bg);font-weight:600;position:relative}
 td.top::after{content:'★';font-size:7px;color:#c8a000;position:absolute;top:3px;right:3px}
 .empty-state{text-align:center;padding:36px 20px;color:var(--muted);font-size:13px}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--text);background:#e8e7e3}
+th.sort-asc::after{content:' ↑';font-size:10px;opacity:.7}
+th.sort-desc::after{content:' ↓';font-size:10px;opacity:.7}
+.period-label{font-size:10px;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.period-label select{font-size:11px;border:1px solid var(--border2);border-radius:5px;padding:2px 6px;background:var(--bg);cursor:pointer}
+td.date-cell{white-space:nowrap;font-size:12px;color:var(--muted)}
 
 /* Buttons */
 .btn-primary{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
@@ -111,6 +118,7 @@ td.top::after{content:'★';font-size:7px;color:#c8a000;position:absolute;top:3p
 <div id="login-screen">
   <div class="login-card">
     <h1>F&B Revenue Tracker</h1>
+    <p>1 Hotel Melbourne</p>
     <input type="password" id="pw-input" placeholder="Password">
     <button onclick="checkPw()">Sign in</button>
     <div id="login-error"></div>
@@ -158,7 +166,7 @@ td.top::after{content:'★';font-size:7px;color:#c8a000;position:absolute;top:3p
 </div>
 
 <script>
-const PASSWORD = 'Ird@2026!';
+const PASSWORD = 'IRD@2026!';
 const STORE_KEY = 'fb_days_v2';
 const SESSION_KEY = 'fb_auth';
 
@@ -201,6 +209,38 @@ const DASH_TABLE_COLS = OUTLETS.map(o => ({ k:o.key, h:o.short, isTc: o.key==='i
 let days = [];
 let currentTab = 'dashboard';
 let charts = {};
+let sortState = { col:'date', dir:'desc' }; // applies to current tab's table
+let outletSortState = {}; // per outlet key
+
+function getSortState(key){ return key==='dashboard' ? sortState : (outletSortState[key]||{col:'date',dir:'desc'}); }
+function setSortState(key,col){
+  const s=getSortState(key);
+  if (s.col===col) s.dir=s.dir==='desc'?'asc':'desc'; else {s.col=col;s.dir='desc';}
+  if (key==='dashboard') sortState=s; else outletSortState[key]=s;
+  renderCurrent();
+}
+function sortRows(rows,col,dir,key){
+  return [...rows].sort((a,b)=>{
+    let av,bv;
+    if (col==='date'){av=a.date;bv=b.date;}
+    else if (col==='total_fb'){av=a.total_fb||0;bv=b.total_fb||0;}
+    else if (key){av=a.outlets[key][col]||0;bv=b.outlets[key][col]||0;}
+    else{av=a.outlets[col]?.total_revenue||0;bv=b.outlets[col]?.total_revenue||0;}
+    if (typeof av==='string') return dir==='asc'?av.localeCompare(bv):bv.localeCompare(av);
+    return dir==='asc'?av-bv:bv-av;
+  });
+}
+function thSort(tabKey,col,label,state){
+  const active=state.col===col;
+  const cls='sortable'+(active?' sort-'+state.dir:'');
+  return '<th class="'+cls+'" onclick="setSortState(\''+tabKey+'\',\''+col+'\')">'+label+'</th>';
+}
+function fmtDateShort(d){
+  if(!d)return'';
+  const[y,m,dy]=d.split('-');
+  const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return (+dy)+' '+mn[+m-1]+' '+(+y%100 < 10?'0'+(+y%100):+y%100);
+}
 const activeSeriesMap = { dashboard: new Set(OUTLETS.map(o => o.key)) };
 OUTLETS.forEach(o => { activeSeriesMap[o.key] = new Set(OUTLET_SERIES.map(s => s.k)); });
 
@@ -433,19 +473,22 @@ function renderCurrent(){
 
 function renderDashboard(){
   const filtered=getFiltered();
-  const note=document.getElementById('dash-note');
-  note.textContent=filtered.length?'Latest: '+filtered[filtered.length-1].date:'';
-
-  // Cards — last day outlet totals
   const cardsEl=document.getElementById('dash-cards');
-  if (!filtered.length){cardsEl.innerHTML='';document.getElementById('dash-table').innerHTML='<div class="empty-state">No data yet — paste a DOR above.</div>';renderDashChart([]);renderDashToggles();return;}
-  const last=filtered[filtered.length-1];
-  cardsEl.innerHTML=OUTLETS.map(o=>'<div class="metric-card"><div class="label">'+o.short+'</div><div class="value">'+fmt(last.outlets[o.key].total_revenue)+'</div></div>').join('')
-    +'<div class="metric-card"><div class="label">Total F&B</div><div class="value">'+fmt(last.total_fb)+'</div></div>';
-
-  renderDashToggles();
-  renderDashChart(filtered);
-  renderDashTable(filtered);
+  const noteEl=document.getElementById('dash-note');
+  if (!filtered.length){
+    noteEl.textContent='';cardsEl.innerHTML='';
+    document.getElementById('dash-table').innerHTML='<div class="empty-state">No data yet — paste a DOR above.</div>';
+    renderDashChart([]);renderDashToggles();return;
+  }
+  const n=filtered.length;
+  const range=n===1?fmtDateShort(filtered[0].date):fmtDateShort(filtered[0].date)+' – '+fmtDateShort(filtered[n-1].date);
+  noteEl.innerHTML='<span class="period-label">Period total — <b>'+range+'</b> ('+n+' day'+(n>1?'s':'')+')</span>';
+  const outletTotals={};
+  OUTLETS.forEach(o=>{outletTotals[o.key]=filtered.reduce((s,d)=>s+(d.outlets[o.key].total_revenue||0),0);});
+  const fbTotal=filtered.reduce((s,d)=>s+(d.total_fb||0),0);
+  cardsEl.innerHTML=OUTLETS.map(o=>'<div class="metric-card"><div class="label">'+o.short+'</div><div class="value">'+fmt(outletTotals[o.key])+'</div></div>').join('')
+    +'<div class="metric-card"><div class="label">Total F&B</div><div class="value">'+fmt(fbTotal)+'</div></div>';
+  renderDashToggles();renderDashChart(filtered);renderDashTable(filtered);
 }
 
 function renderDashToggles(){
@@ -478,14 +521,15 @@ function renderDashChart(filtered){
 function renderDashTable(filtered){
   const el=document.getElementById('dash-table');
   if (!filtered.length){el.innerHTML='<div class="empty-state">No data yet.</div>';return;}
-  const rows=[...filtered].reverse();
-  // Top values per column
+  const ss=getSortState('dashboard');
+  const sorted=sortRows(filtered,ss.col,ss.dir,null);
   const topVals={};
-  OUTLETS.forEach(o=>{const vals=filtered.map(d=>d.outlets[o.key].total_revenue||0);topVals[o.key]=Math.max(...vals);});
-  const totalVals=filtered.map(d=>d.total_fb||0);topVals['total_fb']=Math.max(...totalVals);
-
-  const head='<th>Date</th>'+OUTLETS.map(o=>'<th>'+o.short+'</th>').join('')+'<th>Total F&B</th>';
-  const rowsHtml=rows.map(d=>{
+  OUTLETS.forEach(o=>{topVals[o.key]=Math.max(...filtered.map(d=>d.outlets[o.key].total_revenue||0));});
+  topVals.total_fb=Math.max(...filtered.map(d=>d.total_fb||0));
+  const head=thSort('dashboard','date','Date',ss)
+    +OUTLETS.map(o=>thSort('dashboard',o.key,o.short,ss)).join('')
+    +thSort('dashboard','total_fb','Total F&B',ss);
+  const rowsHtml=sorted.map(d=>{
     const we=isWeekend(d.date);
     const cells=OUTLETS.map(o=>{
       const v=d.outlets[o.key].total_revenue||0;
@@ -493,30 +537,28 @@ function renderDashTable(filtered){
       return '<td'+(isTop?' class="top"':'')+'>'+fmt(v)+'</td>';
     }).join('');
     const tv=d.total_fb||0;const isTTop=topVals.total_fb>0&&Math.round(tv)===Math.round(topVals.total_fb);
-    const label=d.date+(we?' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:3px">WE</span>':'');
-    return '<tr class="'+(we?'weekend':'')+'"><td>'+label+'</td>'+cells+'<td class="tc'+(isTTop?' top':'')+'>'+fmt(tv)+'</td></tr>';
+    const label=fmtDateShort(d.date)+(we?' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:3px">WE</span>':'');
+    return '<tr class="'+(we?'weekend':'')+'"><td class="date-cell">'+label+'</td>'+cells+'<td class="tc'+(isTTop?' top':'')+'>'+fmt(tv)+'</td></tr>';
   }).join('');
-  el.innerHTML='<table><thead><tr>'+head+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>';
+  el.innerHTML='<table style="min-width:760px"><thead><tr>'+head+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>';
 }
 
 function renderOutlet(key){
   const o=OUTLETS.find(x=>x.key===key);
   const filtered=getFiltered();
-  const note=document.getElementById(key+'-note');
-  note.textContent=filtered.length?'Latest: '+filtered[filtered.length-1].date:'';
 
   const cardsEl=document.getElementById(key+'-cards');
   if (!filtered.length){cardsEl.innerHTML='';document.getElementById(key+'-table').innerHTML='<div class="empty-state">No data yet — paste a DOR above.</div>';renderOutletChart(key,[]);renderOutletToggles(key,[]);return;}
-  const last=filtered[filtered.length-1].outlets[key];
+  const n=filtered.length;
+  const range=n===1?fmtDateShort(filtered[0].date):fmtDateShort(filtered[0].date)+' – '+fmtDateShort(filtered[n-1].date);
+  document.getElementById(key+'-note').innerHTML='<span class="period-label">Period total — <b>'+range+'</b> ('+n+' day'+(n>1?'s':'')+')</span>';
+  // Period totals for cards
+  const tot={bfst:0,lunch:0,din:0,other:0,food:0,bev:0,sur:0,total:0};
+  filtered.forEach(d=>{const ot=d.outlets[key];tot.bfst+=ot.breakfast_revenue||0;tot.lunch+=ot.lunch_revenue||0;tot.din+=ot.dinner_revenue||0;tot.other+=ot.other_revenue||0;tot.food+=ot.total_food_revenue||0;tot.bev+=ot.beverage_revenue||0;tot.sur+=ot.surcharges||0;tot.total+=ot.total_revenue||0;});
   const cardItems=[
-    {lb:'Breakfast',v:fmt(last.breakfast_revenue)},
-    {lb:'Lunch',v:fmt(last.lunch_revenue)},
-    {lb:'Dinner',v:fmt(last.dinner_revenue)},
-    {lb:'Other',v:fmt(last.other_revenue)},
-    {lb:'Food total',v:fmt(last.total_food_revenue)},
-    {lb:'Beverage',v:fmt(last.beverage_revenue)},
-    {lb:'Surcharges',v:fmt(last.surcharges)},
-    {lb:'Total',v:fmt(last.total_revenue)},
+    {lb:'Breakfast',v:fmt(tot.bfst)},{lb:'Lunch',v:fmt(tot.lunch)},{lb:'Dinner',v:fmt(tot.din)},
+    {lb:'Other',v:fmt(tot.other)},{lb:'Food total',v:fmt(tot.food)},{lb:'Beverage',v:fmt(tot.bev)},
+    {lb:'Surcharges',v:fmt(tot.sur)},{lb:'Total',v:fmt(tot.total)},
   ];
   cardsEl.innerHTML=cardItems.map(i=>'<div class="metric-card"><div class="label">'+i.lb+'</div><div class="value">'+i.v+'</div></div>').join('');
 
@@ -568,34 +610,29 @@ function renderOutletChart(key,filtered,activeSeries){
 function renderOutletTable(key,filtered){
   const el=document.getElementById(key+'-table');
   if (!filtered.length){el.innerHTML='<div class="empty-state">No data yet.</div>';return;}
-  const rows=[...filtered].reverse();
+  const ss=getSortState(key);
+  const sorted=sortRows(filtered,ss.col,ss.dir,key);
   const outletRows=filtered.map(d=>d.outlets[key]);
-
-  // Top values per column (revenue cols only)
-  const topCols=OUTLET_TABLE_COLS.filter(c=>!c.noTop&&!c.noFmt);
   const tops={};
-  topCols.forEach(c=>{const vals=outletRows.map(r=>r[c.k]||0);tops[c.k]=Math.max(...vals);});
-
-  // Detect which cols have any non-zero data
+  OUTLET_TABLE_COLS.filter(c=>!c.noTop&&!c.noFmt).forEach(c=>{tops[c.k]=Math.max(...outletRows.map(r=>r[c.k]||0));});
   const visibleCols=OUTLET_TABLE_COLS.filter(c=>{
     if (c.k==='total_revenue'||c.k==='total_covers') return true;
     return outletRows.some(r=>(r[c.k]||0)!==0);
   });
-
-  const head='<th>Date</th>'+visibleCols.map(c=>'<th>'+c.h+'</th>').join('');
-  const rowsHtml=rows.map(d=>{
+  const head=thSort(key,'date','Date',ss)+visibleCols.map(c=>thSort(key,c.k,c.h,ss)).join('');
+  const rowsHtml=sorted.map(d=>{
     const ot=d.outlets[key]; const we=isWeekend(d.date);
     const cells=visibleCols.map(c=>{
       const v=ot[c.k]||0;
       const display=c.noFmt?Math.round(v):fmt(v);
       const isTop=!c.noTop&&tops[c.k]>0&&Math.round(v)===Math.round(tops[c.k]);
-      const cls=(c.isTc?'tc ':''+(isTop?'top':''));
-      return '<td'+(cls.trim()?' class="'+cls.trim()+'"':'')+'>'+display+'</td>';
+      const cls=(c.isTc?'tc ':''+(isTop?'top':'')).trim();
+      return '<td'+(cls?' class="'+cls+'"':'')+'>'+display+'</td>';
     }).join('');
-    const label=d.date+(we?' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:3px">WE</span>':'');
-    return '<tr class="'+(we?'weekend':'')+'"><td>'+label+'</td>'+cells+'</tr>';
+    const label=fmtDateShort(d.date)+(we?' <span style="font-size:10px;color:#3a5aa8;font-weight:600;margin-left:3px">WE</span>':'');
+    return '<tr class="'+(we?'weekend':'')+'"><td class="date-cell">'+label+'</td>'+cells+'</tr>';
   }).join('');
-  el.innerHTML='<table><thead><tr>'+head+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>';
+  el.innerHTML='<table style="min-width:480px"><thead><tr>'+head+'</tr></thead><tbody>'+rowsHtml+'</tbody></table>';
 }
 
 function clearAll(){
