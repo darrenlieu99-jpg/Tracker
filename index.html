@@ -276,6 +276,7 @@ const activeSeriesMap = { dashboard: new Set(OUTLETS.map(o => o.key)) };
 OUTLETS.forEach(o => { activeSeriesMap[o.key] = new Set(OUTLET_SERIES.map(s => s.k)); });
 const occChartActive = { occ:true, mtd:true, guests:true, density:true };
 const GUEST_SERIES = { k:'guests', lb:'Guests', co:'#7060cc', d:[], isGuest:true };
+const guestInitialized = new Set(); // tracks which outlet tabs have had guests added at least once
 
 function togOccChart(key){
   occChartActive[key]=!occChartActive[key];
@@ -339,8 +340,9 @@ function saveDays() { localStorage.setItem(STORE_KEY,JSON.stringify(days)); }
 
 // ── Export / Import ──
 function exportData() {
-  if (!days.length) { alert('No data to export yet.'); return; }
-  const blob=new Blob([JSON.stringify({exported:new Date().toISOString(),days},null,2)],{type:'application/json'});
+  if (!days.length&&!occDays.length) { alert('No data to export yet.'); return; }
+  const payload={exported:new Date().toISOString(),days,occDays,notes};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='fb-data-'+new Date().toISOString().slice(0,10)+'.json';
   a.click(); URL.revokeObjectURL(a.href);
@@ -351,17 +353,42 @@ function importData(e) {
   reader.onload=ev=>{
     try {
       const parsed=JSON.parse(ev.target.result);
-      const imported=parsed.days||parsed;
-      if (!Array.isArray(imported)){alert('Invalid file.');return;}
-      let added=0,updated=0;
-      imported.forEach(d=>{
+      let fbAdded=0,fbUpdated=0,occAdded=0,occUpdated=0,notesCount=0;
+
+      // F&B days
+      const importedDays=parsed.days||(Array.isArray(parsed)?parsed:[]);
+      importedDays.forEach(d=>{
         if (!d.date) return;
         const ex=days.find(x=>x.date===d.date);
-        if (ex){Object.assign(ex,d);updated++;} else {days.push(d);added++;}
+        if (ex){Object.assign(ex,d);fbUpdated++;} else {days.push(d);fbAdded++;}
       });
       days.sort((a,b)=>a.date.localeCompare(b.date));
-      saveDays(); updateMonthFilter(); renderCurrent();
-      setStatus('Imported: '+added+' new, '+updated+' updated.','ok');
+      saveDays();
+
+      // Occupancy days
+      if(parsed.occDays&&Array.isArray(parsed.occDays)){
+        parsed.occDays.forEach(d=>{
+          if (!d.date) return;
+          const ex=occDays.find(x=>x.date===d.date);
+          if (ex){Object.assign(ex,d);occUpdated++;} else {occDays.push(d);occAdded++;}
+        });
+        occDays.sort((a,b)=>a.date.localeCompare(b.date));
+        saveOccDays();
+      }
+
+      // Notes
+      if(parsed.notes&&typeof parsed.notes==='object'){
+        Object.entries(parsed.notes).forEach(([date,text])=>{
+          notes[date]=text; notesCount++;
+        });
+        saveNotes();
+      }
+
+      updateMonthFilter(); renderCurrent();
+      const msg='F&B: '+fbAdded+' new, '+fbUpdated+' updated'
+        +(occAdded||occUpdated?' | Occ: '+occAdded+' new, '+occUpdated+' updated':'')
+        +(notesCount?' | '+notesCount+' notes restored':'');
+      setStatus(msg,'ok');
     } catch(err){alert('Could not read file: '+err.message);}
     e.target.value='';
   };
@@ -655,7 +682,10 @@ function renderOutlet(key){
   // Add guests series for IRD and Neighbours when occ data available
   const guestOutlets=['ird','neighbours'];
   if(guestOutlets.includes(key)&&filtered.some(d=>getOccForDate(d.date))){
-    if(!activeSeriesMap[key].has('guests')) activeSeriesMap[key].add('guests');
+    if(!guestInitialized.has(key)){
+      activeSeriesMap[key].add('guests');
+      guestInitialized.add(key);
+    }
     activeSeries.push(GUEST_SERIES);
   }
 
@@ -785,11 +815,22 @@ function exportExcel(){
   // ── Occupancy sheet ──
   if(occDays.length){
     const occSorted=[...occDays].sort((a,b)=>a.date.localeCompare(b.date));
-    const occHeader=['Date','Occ %','MTD Avg Occ %','Rooms Sold','Trans Rms','Grp Pkup','Adults','Kids','Total Guests'];
-    const occRows=occSorted.map(d=>[d.date,+d.occ.toFixed(1),+calcMTDAvg(d.date).toFixed(1),d.rms_sold,d.trans_rms,d.grp_pkup,d.adults,d.kids,d.total_guests]);
+    const occHeader=['Date','Occ %','MTD Avg Occ %','Rms Sold','Trans Rms','Grp Pkup','Adults','Kids','Total Guests','Density (g/rm)','Note'];
+    const occRows=occSorted.map(d=>{
+      const density=d.rms_sold>0?+(d.total_guests/d.rms_sold).toFixed(2):0;
+      return [d.date,+d.occ.toFixed(1),+calcMTDAvg(d.date).toFixed(1),d.rms_sold,d.trans_rms,d.grp_pkup,d.adults,d.kids,d.total_guests,density,notes[d.date]||''];
+    });
     const occWs=XLSX.utils.aoa_to_sheet([occHeader,...occRows]);
-    occWs['!cols']=[{wch:14},{wch:8},{wch:14},{wch:11},{wch:10},{wch:10},{wch:8},{wch:6},{wch:13}];
+    occWs['!cols']=[{wch:14},{wch:8},{wch:14},{wch:10},{wch:10},{wch:10},{wch:8},{wch:6},{wch:13},{wch:14},{wch:30}];
     XLSX.utils.book_append_sheet(wb,occWs,'Occupancy');
+  }
+
+  // ── Notes sheet ──
+  const noteEntries=Object.entries(notes).sort((a,b)=>a[0].localeCompare(b[0]));
+  if(noteEntries.length){
+    const notesWs=XLSX.utils.aoa_to_sheet([['Date','Note'],...noteEntries]);
+    notesWs['!cols']=[{wch:14},{wch:50}];
+    XLSX.utils.book_append_sheet(wb,notesWs,'Notes');
   }
 
   const filename='fb-tracker-'+new Date().toISOString().slice(0,10)+'.xlsx';
