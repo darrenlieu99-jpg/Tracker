@@ -1097,6 +1097,11 @@ function getModelStats(outletKey){
     const ot=d.outlets[outletKey];
     return (ot.total_food_revenue+ot.total_beverage_revenue+ot.surcharges)/ot.total_covers;
   });
+  // P&L avg check: (food + bev only) / covers — matches what's reported
+  const spendPerCoverPL=paired.map(d=>{
+    const ot=d.outlets[outletKey];
+    return (ot.total_food_revenue+ot.total_beverage_revenue)/ot.total_covers;
+  });
   // Capture % of rooms sold (covers / rooms_sold)
   const captureOfRooms=paired.map(d=>{
     const occ=getOccForDate(d.date);
@@ -1106,7 +1111,7 @@ function getModelStats(outletKey){
   const foodSplits=withRev.map(d=>d.outlets[outletKey].total_food_revenue/d.outlets[outletKey].total_revenue);
   const bevSplits=withRev.map(d=>d.outlets[outletKey].total_beverage_revenue/d.outlets[outletKey].total_revenue);
   const otherSplits=withRev.map(d=>d.outlets[outletKey].surcharges/d.outlets[outletKey].total_revenue);
-  return{n:paired.length,captureRate:avg(captureRates),captureRateOfRooms:avg(captureOfRooms),spendPerCover:avg(spendPerCover),
+  return{n:paired.length,captureRate:avg(captureRates),captureRateOfRooms:avg(captureOfRooms),spendPerCover:avg(spendPerCover),spendPerCoverPL:avg(spendPerCoverPL),
     foodSplit:avg(foodSplits),bevSplit:avg(bevSplits),otherSplit:avg(otherSplits)};
 }
 
@@ -1123,10 +1128,11 @@ function getMonthActuals(monthKey,outletKey){
   const occM=occDays.filter(d=>getMonthKey(d.date)===monthKey);
   const totGuests=occM.reduce((s,d)=>s+d.total_guests,0);
   const totRmsSold=occM.reduce((s,d)=>s+d.rms_sold,0);
-  // avg per cover is explicit (food+bev+surcharges)/covers so tray charge is always included
+  // P&L avg check (food+bev only, matches what's reported) and true spend (incl. surcharges)
+  const avgCheckPL=totCovers>0?(totFoodRev+totBevRev)/totCovers:0;
   const avgPerCover=totCovers>0?(totFoodRev+totBevRev+totSurcharges)/totCovers:0;
   return{days:mDays.length,covers:totCovers,food_rev:totFoodRev,bev_rev:totBevRev,
-    other_rev:totSurcharges,total_rev:totRev,avg_per_cover:avgPerCover,
+    other_rev:totSurcharges,total_rev:totRev,avg_check_pl:avgCheckPL,avg_per_cover:avgPerCover,
     capture_rate:totGuests>0?totCovers/totGuests:0,
     capture_rate_rooms:totRmsSold>0?totCovers/totRmsSold:0,guests:totGuests};
 }
@@ -1229,17 +1235,17 @@ function openFcForm(){
   const occ=existing?.occ_pct||(irdStats?67:'');
   const density=existing?.density||(irdStats?1.6:'');
   const iCapture=existing?.ird.capture_rate||(irdStats?+(irdStats.captureRate*100).toFixed(1):19);
-  const iApc=existing?.ird.avg_per_cover||(irdStats?+irdStats.spendPerCover.toFixed(2):40);
+  const iApc=existing?.ird.avg_per_cover||(irdStats?+irdStats.spendPerCoverPL.toFixed(2):40);
   const iFood=existing?.ird.food_split||(irdStats?+(irdStats.foodSplit*100).toFixed(1):80);
   const iBev=existing?.ird.bev_split||(irdStats?+(irdStats.bevSplit*100).toFixed(1):6);
   const iOther=existing?.ird.other_split||(irdStats?+(irdStats.otherSplit*100).toFixed(1):14);
   const nCapture=existing?.neighbours.capture_rate||(nStats?+(nStats.captureRate*100).toFixed(1):28);
-  const nApc=existing?.neighbours.avg_per_cover||(nStats?+nStats.spendPerCover.toFixed(2):11.50);
+  const nApc=existing?.neighbours.avg_per_cover||(nStats?+nStats.spendPerCoverPL.toFixed(2):11.50);
 
   const iHint=irdStats?'Model avg: '+(irdStats.captureRate*100).toFixed(1)+'% from '+irdStats.n+' days':'No history yet';
   const nHint=nStats?'Model avg: '+(nStats.captureRate*100).toFixed(1)+'% from '+nStats.n+' days':'No history yet';
-  const iApcHint=irdStats?'Model avg: $'+irdStats.spendPerCover.toFixed(2):'No history yet';
-  const nApcHint=nStats?'Model avg: $'+nStats.spendPerCover.toFixed(2):'No history yet';
+  const iApcHint=irdStats?'⭐ P&L avg: $'+irdStats.spendPerCoverPL.toFixed(2)+' | True (incl. tray): $'+irdStats.spendPerCover.toFixed(2):'No history yet';
+  const nApcHint=nStats?'⭐ P&L avg: $'+nStats.spendPerCoverPL.toFixed(2)+' | True (incl. tray): $'+nStats.spendPerCover.toFixed(2):'No history yet';
 
   document.getElementById('fc-form-title').textContent='Forecast — '+getMonthLabel(mk);
   document.getElementById('fc-form-fields').innerHTML=
@@ -1253,7 +1259,7 @@ function openFcForm(){
     +'<div style="font-size:11px;font-weight:600;color:#c94a20;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px">IRD</div>'
     +'<div class="fc-form-grid">'
     +'<div class="fc-fi"><label>Capture rate %</label><input id="fc-ird-capture" type="number" step="0.1" value="'+iCapture+'" oninput="updateFcPreview()"><div class="fc-hint">'+iHint+'</div></div>'
-    +'<div class="fc-fi"><label>Avg spend / cover ($)</label><input id="fc-ird-apc" type="number" step="0.01" value="'+iApc+'" oninput="updateFcPreview()"><div class="fc-hint">'+iApcHint+'</div></div>'
+    +'<div class="fc-fi"><label>P&amp;L avg check / cover ($) <span style="font-size:9px;background:#f59e0b;color:#fff;border-radius:3px;padding:1px 4px">REPORT</span></label><input id="fc-ird-apc" type="number" step="0.01" value="'+iApc+'" oninput="updateFcPreview()"><div class="fc-hint">'+iApcHint+'</div></div>'
     +'<div class="fc-fi"><label>Food split %</label><input id="fc-ird-food" type="number" step="0.1" value="'+iFood+'" oninput="updateFcPreview()"></div>'
     +'<div class="fc-fi"><label>Bev split %</label><input id="fc-ird-bev" type="number" step="0.1" value="'+iBev+'" oninput="updateFcPreview()"></div>'
     +'<div class="fc-fi"><label>Surcharges split %</label><input id="fc-ird-other" type="number" step="0.1" value="'+iOther+'" oninput="updateFcPreview()"></div>'
@@ -1261,7 +1267,7 @@ function openFcForm(){
     +'<div style="font-size:11px;font-weight:600;color:#7060cc;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px">Neighbours</div>'
     +'<div class="fc-form-grid">'
     +'<div class="fc-fi"><label>Capture rate %</label><input id="fc-n-capture" type="number" step="0.1" value="'+nCapture+'" oninput="updateFcPreview()"><div class="fc-hint">'+nHint+'</div></div>'
-    +'<div class="fc-fi"><label>Avg spend / cover ($)</label><input id="fc-n-apc" type="number" step="0.01" value="'+nApc+'" oninput="updateFcPreview()"><div class="fc-hint">'+nApcHint+'</div></div>'
+    +'<div class="fc-fi"><label>P&amp;L avg check / cover ($) <span style="font-size:9px;background:#f59e0b;color:#fff;border-radius:3px;padding:1px 4px">REPORT</span></label><input id="fc-n-apc" type="number" step="0.01" value="'+nApc+'" oninput="updateFcPreview()"><div class="fc-hint">'+nApcHint+'</div></div>'
     +'</div>'
     +'<div id="fc-preview"></div>';
   document.getElementById('fc-form-panel').style.display='block';
@@ -1298,6 +1304,7 @@ function renderForecast(){
       ?'<div class="fc-stat"><span>Capture % (guests)</span><span class="fc-stat-val">'+(irdStats.captureRate*100).toFixed(1)+'%</span></div>'
        +'<div class="fc-stat"><span>Capture % (rooms)</span><span class="fc-stat-val" style="color:#1a6e8e">'+(irdStats.captureRateOfRooms*100).toFixed(1)+'%</span></div>'
        +'<div class="fc-stat"><span>Avg spend / cover (incl. tray)</span><span class="fc-stat-val">$'+irdStats.spendPerCover.toFixed(2)+'</span></div>'
+       +'<div class="fc-stat" style="background:#fffbea;margin:0 -14px;padding:5px 14px;border-radius:4px"><span>P&amp;L avg check <span style="font-size:9px;background:#f59e0b;color:#fff;border-radius:3px;padding:1px 4px;margin-left:4px">REPORT</span></span><span class="fc-stat-val">$'+irdStats.spendPerCoverPL.toFixed(2)+'</span></div>'
        +'<div class="fc-stat"><span>Food split</span><span class="fc-stat-val">'+(irdStats.foodSplit*100).toFixed(1)+'%</span></div>'
        +'<div class="fc-stat"><span>Bev split</span><span class="fc-stat-val">'+(irdStats.bevSplit*100).toFixed(1)+'%</span></div>'
        +'<div class="fc-stat"><span>Surcharges split</span><span class="fc-stat-val">'+(irdStats.otherSplit*100).toFixed(1)+'%</span></div>'
@@ -1307,7 +1314,8 @@ function renderForecast(){
     +(nStats
       ?'<div class="fc-stat"><span>Capture % (guests)</span><span class="fc-stat-val">'+(nStats.captureRate*100).toFixed(1)+'%</span></div>'
        +'<div class="fc-stat"><span>Capture % (rooms)</span><span class="fc-stat-val" style="color:#1a6e8e">'+(nStats.captureRateOfRooms*100).toFixed(1)+'%</span></div>'
-       +'<div class="fc-stat"><span>Avg spend / cover</span><span class="fc-stat-val">$'+nStats.spendPerCover.toFixed(2)+'</span></div>'
+       +'<div class="fc-stat"><span>Avg spend / cover (incl. tray)</span><span class="fc-stat-val">$'+nStats.spendPerCover.toFixed(2)+'</span></div>'
+       +'<div class="fc-stat" style="background:#fffbea;margin:0 -14px;padding:5px 14px;border-radius:4px"><span>P&amp;L avg check <span style="font-size:9px;background:#f59e0b;color:#fff;border-radius:3px;padding:1px 4px;margin-left:4px">REPORT</span></span><span class="fc-stat-val">$'+nStats.spendPerCoverPL.toFixed(2)+'</span></div>'
       :'<div style="font-size:12px;color:var(--muted);padding:8px 0">Paste DOR data + occupancy to build model averages.</div>'
     )+'</div>'
     +'</div>';
@@ -1330,8 +1338,10 @@ function renderForecast(){
       const fcCapPct=irdFc.capture_rate?irdFc.capture_rate+'%':'—';
       const actCapPct=irdAct?.capture_rate?(irdAct.capture_rate*100).toFixed(1)+'%':'—';
       const actCapRmsPct=irdAct?.capture_rate_rooms?(irdAct.capture_rate_rooms*100).toFixed(1)+'%':'—';
-      const fcApc=irdFc.avg_per_cover?'$'+irdFc.avg_per_cover.toFixed(2):'—';
-      const actApc=irdAct?.avg_per_cover?'$'+irdAct.avg_per_cover.toFixed(2):'—';
+      const fcApc=irdFc.avg_per_cover?'<span style="background:#fffbea;padding:1px 4px;border-radius:3px">$'+irdFc.avg_per_cover.toFixed(2)+'</span>':'—';
+      const actApcPL=irdAct?.avg_check_pl?'<span style="background:#fffbea;padding:1px 4px;border-radius:3px">$'+irdAct.avg_check_pl.toFixed(2)+'</span>':'—';
+      const actApcTrue=irdAct?.avg_per_cover?'<span style="font-size:10px;color:var(--muted)"> ($'+irdAct.avg_per_cover.toFixed(2)+' w/tray)</span>':'';
+      const actApc=irdAct?(actApcPL+actApcTrue):'—';
       return '<tr class="forecast-row"><td>Forecast</td><td>'+irdFc.covers.toLocaleString()+'</td><td>'+fmt(irdFc.food_rev)+'</td><td>'+fmt(irdFc.bev_rev)+'</td><td>'+fmt(irdFc.other_rev)+'</td><td>'+fmt(irdFc.total_rev)+'</td><td>'+fcApc+'</td><td>'+fcCapPct+'</td><td>—</td></tr>'
         +(irdAct?'<tr class="actual-row"><td>Actual'+(irdAct.days<daysInMonthFromKey(mk)?' ('+irdAct.days+'d)':'')+'</td><td>'+irdAct.covers.toLocaleString()+'</td><td>'+fmt(irdAct.food_rev)+'</td><td>'+fmt(irdAct.bev_rev)+'</td><td>'+fmt(irdAct.other_rev)+'</td><td>'+fmt(irdAct.total_rev)+'</td><td>'+actApc+'</td><td>'+actCapPct+'</td><td style="color:#1a6e8e">'+actCapRmsPct+'</td></tr>'
             +'<tr class="var-row"><td>Δ</td>'+varCell(irdFc.covers,irdAct.covers)+varCellRev(irdFc.food_rev,irdAct.food_rev)+varCellRev(irdFc.bev_rev,irdAct.bev_rev)+varCellRev(irdFc.other_rev,irdAct.other_rev)+varCellRev(irdFc.total_rev,irdAct.total_rev)+'<td>—</td><td>—</td><td>—</td></tr>'
@@ -1339,8 +1349,10 @@ function renderForecast(){
     })();
 
     const nRows=(()=>{
-      const fcApc=nFc.avg_per_cover?'$'+nFc.avg_per_cover.toFixed(2):'—';
-      const actApc=nAct?.avg_per_cover?'$'+nAct.avg_per_cover.toFixed(2):'—';
+      const fcApc=nFc.avg_per_cover?'<span style="background:#fffbea;padding:1px 4px;border-radius:3px">$'+nFc.avg_per_cover.toFixed(2)+'</span>':'—';
+      const actApcPLn=nAct?.avg_check_pl?'<span style="background:#fffbea;padding:1px 4px;border-radius:3px">$'+nAct.avg_check_pl.toFixed(2)+'</span>':'—';
+      const actApcTrueN=nAct?.avg_per_cover?'<span style="font-size:10px;color:var(--muted)"> ($'+nAct.avg_per_cover.toFixed(2)+' w/tray)</span>':'';
+      const actApc=nAct?(actApcPLn+actApcTrueN):'—';
       const fcCapPct=nFc.capture_rate?nFc.capture_rate+'%':'—';
       const actCapPct=nAct?.capture_rate?(nAct.capture_rate*100).toFixed(1)+'%':'—';
       const actCapRmsPct=nAct?.capture_rate_rooms?(nAct.capture_rate_rooms*100).toFixed(1)+'%':'—';
