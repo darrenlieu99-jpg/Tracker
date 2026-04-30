@@ -1314,8 +1314,7 @@ function renderForecast(){
     +(nStats
       ?'<div class="fc-stat"><span>Capture % (guests)</span><span class="fc-stat-val">'+(nStats.captureRate*100).toFixed(1)+'%</span></div>'
        +'<div class="fc-stat"><span>Capture % (rooms)</span><span class="fc-stat-val" style="color:#1a6e8e">'+(nStats.captureRateOfRooms*100).toFixed(1)+'%</span></div>'
-       +'<div class="fc-stat"><span>Avg spend / cover (incl. tray)</span><span class="fc-stat-val">$'+nStats.spendPerCover.toFixed(2)+'</span></div>'
-       +'<div class="fc-stat" style="background:#fffbea;margin:0 -14px;padding:5px 14px;border-radius:4px"><span>P&amp;L avg check <span style="font-size:9px;background:#f59e0b;color:#fff;border-radius:3px;padding:1px 4px;margin-left:4px">REPORT</span></span><span class="fc-stat-val">$'+nStats.spendPerCoverPL.toFixed(2)+'</span></div>'
+       +'<div class="fc-stat"><span>Avg spend / cover</span><span class="fc-stat-val">$'+nStats.spendPerCoverPL.toFixed(2)+'</span></div>'
       :'<div style="font-size:12px;color:var(--muted);padding:8px 0">Paste DOR data + occupancy to build model averages.</div>'
     )+'</div>'
     +'</div>';
@@ -1338,21 +1337,20 @@ function renderForecast(){
       const fcCapPct=irdFc.capture_rate?irdFc.capture_rate+'%':'—';
       const actCapPct=irdAct?.capture_rate?(irdAct.capture_rate*100).toFixed(1)+'%':'—';
       const actCapRmsPct=irdAct?.capture_rate_rooms?(irdAct.capture_rate_rooms*100).toFixed(1)+'%':'—';
-      const fcApc=irdFc.avg_per_cover?'<span style="background:#fffbea;padding:1px 4px;border-radius:3px">$'+irdFc.avg_per_cover.toFixed(2)+'</span>':'—';
+      // Two separate avg/cover columns for IRD
+      const fcApcPL=irdFc.avg_per_cover?'<span style="background:#fffbea;padding:1px 4px;border-radius:3px">$'+irdFc.avg_per_cover.toFixed(2)+'</span>':'—';
       const actApcPL=irdAct?.avg_check_pl?'<span style="background:#fffbea;padding:1px 4px;border-radius:3px">$'+irdAct.avg_check_pl.toFixed(2)+'</span>':'—';
-      const actApcTrue=irdAct?.avg_per_cover?'<span style="font-size:10px;color:var(--muted)"> ($'+irdAct.avg_per_cover.toFixed(2)+' w/tray)</span>':'';
-      const actApc=irdAct?(actApcPL+actApcTrue):'—';
-      return '<tr class="forecast-row"><td>Forecast</td><td>'+irdFc.covers.toLocaleString()+'</td><td>'+fmt(irdFc.food_rev)+'</td><td>'+fmt(irdFc.bev_rev)+'</td><td>'+fmt(irdFc.other_rev)+'</td><td>'+fmt(irdFc.total_rev)+'</td><td>'+fcApc+'</td><td>'+fcCapPct+'</td><td>—</td></tr>'
-        +(irdAct?'<tr class="actual-row"><td>Actual'+(irdAct.days<daysInMonthFromKey(mk)?' ('+irdAct.days+'d)':'')+'</td><td>'+irdAct.covers.toLocaleString()+'</td><td>'+fmt(irdAct.food_rev)+'</td><td>'+fmt(irdAct.bev_rev)+'</td><td>'+fmt(irdAct.other_rev)+'</td><td>'+fmt(irdAct.total_rev)+'</td><td>'+actApc+'</td><td>'+actCapPct+'</td><td style="color:#1a6e8e">'+actCapRmsPct+'</td></tr>'
-            +'<tr class="var-row"><td>Δ</td>'+varCell(irdFc.covers,irdAct.covers)+varCellRev(irdFc.food_rev,irdAct.food_rev)+varCellRev(irdFc.bev_rev,irdAct.bev_rev)+varCellRev(irdFc.other_rev,irdAct.other_rev)+varCellRev(irdFc.total_rev,irdAct.total_rev)+'<td>—</td><td>—</td><td>—</td></tr>'
-          :'<tr class="var-row"><td colspan="9" style="color:var(--muted);text-align:center;font-size:11px">No actuals yet for this month</td></tr>');
+      const actApcTrue=irdAct?.avg_per_cover?'$'+irdAct.avg_per_cover.toFixed(2):'—';
+      return '<tr class="forecast-row"><td>Forecast</td><td>'+irdFc.covers.toLocaleString()+'</td><td>'+fmt(irdFc.food_rev)+'</td><td>'+fmt(irdFc.bev_rev)+'</td><td>'+fmt(irdFc.other_rev)+'</td><td>'+fmt(irdFc.total_rev)+'</td><td>'+fcApcPL+'</td><td>—</td><td>'+fcCapPct+'</td><td>—</td></tr>'
+        +(irdAct?'<tr class="actual-row"><td>Actual'+(irdAct.days<daysInMonthFromKey(mk)?' ('+irdAct.days+'d)':'')+'</td><td>'+irdAct.covers.toLocaleString()+'</td><td>'+fmt(irdAct.food_rev)+'</td><td>'+fmt(irdAct.bev_rev)+'</td><td>'+fmt(irdAct.other_rev)+'</td><td>'+fmt(irdAct.total_rev)+'</td><td>'+actApcPL+'</td><td>'+actApcTrue+'</td><td>'+actCapPct+'</td><td style="color:#1a6e8e">'+actCapRmsPct+'</td></tr>'
+            +'<tr class="var-row"><td>Δ</td>'+varCell(irdFc.covers,irdAct.covers)+varCellRev(irdFc.food_rev,irdAct.food_rev)+varCellRev(irdFc.bev_rev,irdAct.bev_rev)+varCellRev(irdFc.other_rev,irdAct.other_rev)+varCellRev(irdFc.total_rev,irdAct.total_rev)+'<td>—</td><td>—</td><td>—</td><td>—</td></tr>'
+          :'<tr class="var-row"><td colspan="10" style="color:var(--muted);text-align:center;font-size:11px">No actuals yet for this month</td></tr>');
     })();
 
     const nRows=(()=>{
-      const fcApc=nFc.avg_per_cover?'<span style="background:#fffbea;padding:1px 4px;border-radius:3px">$'+nFc.avg_per_cover.toFixed(2)+'</span>':'—';
-      const actApcPLn=nAct?.avg_check_pl?'<span style="background:#fffbea;padding:1px 4px;border-radius:3px">$'+nAct.avg_check_pl.toFixed(2)+'</span>':'—';
-      const actApcTrueN=nAct?.avg_per_cover?'<span style="font-size:10px;color:var(--muted)"> ($'+nAct.avg_per_cover.toFixed(2)+' w/tray)</span>':'';
-      const actApc=nAct?(actApcPLn+actApcTrueN):'—';
+      // Neighbours — plain avg check only, no tray charge column
+      const fcApc=nFc.avg_per_cover?'$'+nFc.avg_per_cover.toFixed(2):'—';
+      const actApc=nAct?.avg_check_pl?'$'+nAct.avg_check_pl.toFixed(2):'—';
       const fcCapPct=nFc.capture_rate?nFc.capture_rate+'%':'—';
       const actCapPct=nAct?.capture_rate?(nAct.capture_rate*100).toFixed(1)+'%':'—';
       const actCapRmsPct=nAct?.capture_rate_rooms?(nAct.capture_rate_rooms*100).toFixed(1)+'%':'—';
@@ -1368,7 +1366,7 @@ function renderForecast(){
       +'<button class="btn-ghost" style="font-size:11px;padding:3px 8px" onclick="fcSelectedMonth=\''+mk+'\';document.getElementById(\'fc-month-sel\').value=\''+mk+'\';openFcForm()">Edit</button>'
       +'<button class="btn-danger" style="font-size:11px;padding:3px 8px" onclick="deleteForecast(\''+mk+'\')">Delete</button></div></div>'
       +'<div class="cmp-outlet-label" style="color:#c94a20">IRD</div>'
-      +'<div class="cmp-table-wrap"><table class="cmp-table"><thead><tr><th></th><th>Covers</th><th>Food $</th><th>Bev $</th><th>Surcharges</th><th>Total $</th><th>Avg/Cover</th><th>Cap% guests</th><th style="color:#1a6e8e">Cap% rooms</th></tr></thead><tbody>'+irdRows+'</tbody></table></div>'
+      +'<div class="cmp-table-wrap"><table class="cmp-table"><thead><tr><th></th><th>Covers</th><th>Food $</th><th>Bev $</th><th>Surcharges</th><th>Total $</th><th style="background:#fffbea">Avg/Cover (P&amp;L)</th><th>Avg/Cover (w/tray)</th><th>Cap% guests</th><th style="color:#1a6e8e">Cap% rooms</th></tr></thead><tbody>'+irdRows+'</tbody></table></div>'
       +'<div class="cmp-outlet-label" style="color:#7060cc">Neighbours</div>'
       +'<div class="cmp-table-wrap"><table class="cmp-table"><thead><tr><th></th><th>Covers</th><th>Total $</th><th>Avg/Cover</th><th>Cap% guests</th><th style="color:#1a6e8e">Cap% rooms</th></tr></thead><tbody>'+nRows+'</tbody></table></div>'
       +'</div>';
