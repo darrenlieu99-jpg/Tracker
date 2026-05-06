@@ -920,30 +920,70 @@ function exportExcel(){
 
 // ── Occupancy Parser ──
 function parseOccLine(line){
+  // Must contain a date
   const dm=line.match(/(\d{2})\/(\d{2})\/(\d{4})/);
   if(!dm) return null;
   const date=dm[3]+'-'+dm[1]+'-'+dm[2];
+
+  // Extract guests explicitly before any other manipulation
+  // Handles both "249 / 4" (old Cognos) and "283/7" (new Adobe PDF)
+  const guestMatch=line.match(/(\d+)\s*\/\s*(\d+)\s*$/);
+  const adults=guestMatch?parseInt(guestMatch[1]):0;
+  const kids=guestMatch?parseInt(guestMatch[2]):0;
+
+  // Clean up the line for numeric column extraction:
+  // 1. Remove the date (avoid its slashes being treated as dividers)
+  // 2. Remove parenthetical net figures e.g. (9)
+  // 3. Strip $ signs (new Adobe PDF format has $73,014.70)
+  // 4. Remove the guests field we already captured
+  // 5. Replace remaining slashes with space
   const cleaned=line
     .replace(/\d{2}\/\d{2}\/\d{4}/,'')
     .replace(/\([^)]*\)/g,'')
+    .replace(/\$/g,'')
+    .replace(/\d+\s*\/\s*\d+\s*$/,'')
     .replace(/\s*\/\s*/g,' ');
+
   const nums=(cleaned.match(/[\d,]+\.?\d*/g)||[])
-    .map(n=>parseFloat(n.replace(/,/g,''))).filter(n=>!isNaN(n));
-  if(nums.length<18) return null;
-  // Verified index positions: [2]=Sold [4]=Occ% [13]=Trans [14]=GrpPkup [19]=Adults [20]=Kids
-  const adults=nums[19]||0, kids=nums[20]||0;
-  return {date, rms_sold:nums[2], occ:nums[4], trans_rms:nums[13], grp_pkup:nums[14], adults, kids, total_guests:adults+kids, density: nums[2]>0?+((adults+kids)/nums[2]).toFixed(2):0};
+    .map(n=>parseFloat(n.replace(/,/g,''))).filter(n=>!isNaN(n)&&n>=0);
+
+  // Need at least: avail(0) ooo(1) sold(2) toSell(3) occ(4) + enough cols for trans/grp
+  if(nums.length<14) return null;
+
+  const rms_sold=nums[2]||0;
+  const occ=nums[4]||0;
+  // Trans(13) and GrpPkup(14) — same position in both old and new format
+  const trans_rms=nums[13]||0;
+  const grp_pkup=nums[14]||0;
+
+  if(rms_sold===0) return null;
+
+  return {
+    date, rms_sold, occ, trans_rms, grp_pkup,
+    adults, kids, total_guests:adults+kids,
+    density: rms_sold>0?+((adults+kids)/rms_sold).toFixed(2):0
+  };
 }
 
 function parseOccReport(text){
   const results=[];
-  for(const line of text.split(/\r?\n/)){
-    const t=line.trim();
+  // Adobe PDF copy-paste produces everything on ONE line with no newlines.
+  // Cognos web copy-paste produces tab-separated lines.
+  // Fix: split on date+dayname boundaries — works for both formats.
+  // e.g. splits at "05/05/2026 Tue" but NOT at "Between 05/05/2026 and" or "DATE PRINTED: 05/06/2026"
+  const segments=text.split(/(?=\d{2}\/\d{2}\/\d{4}\s+(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun))/);
+  for(const seg of segments){
+    const t=seg.trim();
     if(!/^\d{2}\/\d{2}\/\d{4}/.test(t)) continue;
     const p=parseOccLine(t);
-    if(p&&p.rms_sold>0) results.push(p);
+    if(p) results.push(p);
   }
-  return results;
+  // Deduplicate by date — single-day reports repeat the same row as "History Total" / "Total"
+  const seen=new Set();
+  return results.filter(d=>{
+    if(seen.has(d.date)) return false;
+    seen.add(d.date); return true;
+  });
 }
 
 function extractOccupancy(){
